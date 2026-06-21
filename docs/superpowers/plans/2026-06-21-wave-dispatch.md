@@ -867,6 +867,79 @@ Noter dans le commit ou la PR le comportement observé (qui a gagné, code HTTP 
 
 ---
 
+### Task 8: Révocation à l'annulation client pendant l'offre (Application)
+
+**Files:**
+- Modify: `src/Taxi.Application/Rides/Cancel/CancelRideCommandHandler.cs`
+
+**Interfaces:**
+- Consumes: `Ride.OfferedDriverIds`/`Ride.Status` (Task 1) ; `IRealtimeNotifier.RideOfferRevokedAsync` (Task 4) ; `DriversByIdsSpec` (Task 5) ; `DriverByIdSpec` (existant, déjà utilisé ligne 50 du handler).
+- Produces: quand une course en `Offered` est annulée par le client, chaque chauffeur de la vague reçoit `rideOfferRevoked` avec `reason="cancelled"`.
+
+> Contexte : `CancelByClient()` autorise l'annulation depuis `Offered`. Dans ce cas la vague est vidée par le passage à `Cancelled`, donc il faut capturer `OfferedDriverIds` AVANT l'appel à `CancelByClient()`.
+
+- [ ] **Step 1: Capturer la vague avant annulation et révoquer après**
+
+Dans `src/Taxi.Application/Rides/Cancel/CancelRideCommandHandler.cs`, remplacer le bloc lignes 27-47 (de `Result outcome;` jusqu'à `await rides.UpdateAsync(ride, cancellationToken);` inclus) par :
+
+```csharp
+        // Capture de la vague d'offre AVANT mutation : si la course est annulée pendant qu'elle est offerte,
+        // ces chauffeurs doivent voir leur offre révoquée.
+        var offeredWave = ride.Status == RideStatus.Offered
+            ? ride.OfferedDriverIds.ToList()
+            : [];
+
+        Result outcome;
+        if (command.IsDriver)
+        {
+            var driver = await drivers.FirstOrDefaultAsync(new DriverByUserIdSpec(command.UserId), cancellationToken);
+            if (driver is null)
+                return Result.Failure<RideDto>(RideErrors.NoDriverProfile);
+            if (ride.DriverId != driver.Id)
+                return Result.Failure<RideDto>(RideErrors.NotAssignedDriver);
+            outcome = ride.CancelByDriver();
+        }
+        else
+        {
+            if (ride.ClientId != command.UserId)
+                return Result.Failure<RideDto>(RideErrors.NotAssignedDriver);
+            outcome = ride.CancelByClient();
+        }
+
+        if (outcome.IsFailure)
+            return Result.Failure<RideDto>(outcome.Error);
+
+        await rides.UpdateAsync(ride, cancellationToken);
+
+        if (offeredWave.Count > 0)
+        {
+            var waveDrivers = await drivers.ListAsync(new DriversByIdsSpec(offeredWave), cancellationToken);
+            foreach (var waveDriver in waveDrivers)
+                await notifier.RideOfferRevokedAsync(waveDriver.UserId, ride.Id, "cancelled", cancellationToken);
+        }
+```
+
+> Note : `RideStatus` et `DriversByIdsSpec` sont accessibles (`using Taxi.Domain.Rides;` ligne 5, `using Taxi.Application.Drivers;` ligne 2 — déjà présents). La liste vide `[]` est typée `List<int>` par inférence.
+
+- [ ] **Step 2: Vérifier la compilation**
+
+Run: `dotnet build src/Taxi.Application`
+Expected: succès.
+
+- [ ] **Step 3: Lancer la suite de tests**
+
+Run: `dotnet test tests/Taxi.Application.Tests`
+Expected: PASS (aucun test existant cassé).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/Taxi.Application/Rides/Cancel/CancelRideCommandHandler.cs
+git commit -m "feat(rides): révocation de la vague quand le client annule pendant une offre"
+```
+
+---
+
 ## Notes de vérification finale (self-review)
 
 **Couverture spec :**
@@ -874,10 +947,8 @@ Noter dans le commit ou la PR le comportement observé (qui a gagné, code HTTP 
 - §4 modèle d'état → Task 1. ✓
 - §5 algorithme de vague `min(3, candidats)` → Task 3. ✓
 - §6 verrou xmin + 409 → Tasks 2 (config) + 5 (catch). ✓
-- §7 `rideOfferRevoked` (taken/expired/cancelled) → Tasks 4 (event) + 5 (taken) + 6 (expired). **« cancelled » non implémenté** : voir note ci-dessous.
+- §7 `rideOfferRevoked` (taken/expired/cancelled) → Tasks 4 (event) + 5 (taken) + 6 (expired) + 8 (cancelled). ✓
 - §8 tests → Tasks 1, 3 (unitaires) + 7 (intégration manuelle). ✓
 - §9 fichiers touchés → tous couverts. ✓
-
-**Écart assumé vs spec :** le cas `reason="cancelled"` (révocation quand le client annule pendant une offre) n'a pas de task dédiée car il touche `CancelRideCommandHandler` (hors des fichiers listés §9). À traiter en suivi : dans le handler d'annulation client, si `ride.Status == Offered`, capturer `OfferedDriverIds` avant `CancelByClient()` puis appeler `RideOfferRevokedAsync(..., "cancelled", ...)` pour chacun — même pattern que `RevokeLosersAsync` (Task 5). **Décision : à confirmer avec l'utilisateur s'il faut l'ajouter au périmètre de ce plan ou en faire un ticket séparé.**
 
 **Frontend :** l'écoute de `rideOfferRevoked` côté `TaxiDjibouti.Frontend` (retrait de la carte + toast) est hors de ce plan backend. Ticket séparé côté frontend.
