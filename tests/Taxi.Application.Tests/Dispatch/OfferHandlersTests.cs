@@ -28,10 +28,13 @@ public class OfferHandlersTests
         return d;
     }
 
+    /// <summary>
+    /// Crée une course au statut Offered avec une vague contenant uniquement le chauffeur indiqué.
+    /// </summary>
     private static Ride OfferedRideTo(int driverId)
     {
         var r = Ride.Request("client-1", "A", "B", "Z1", "Z2", 11.58, 43.14, 11.6, 43.16, 1000m);
-        r.Offer(driverId, DateTime.UtcNow.AddSeconds(30));
+        r.OfferWave([driverId], DateTime.UtcNow.AddSeconds(30));
         return r;
     }
 

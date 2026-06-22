@@ -31,6 +31,11 @@ internal sealed class RideConfiguration : IEntityTypeConfiguration<Ride>
 
         // Verrou optimiste : la colonne système PostgreSQL xmin sert de token de concurrence.
         // Deux acceptations simultanées → un seul UPDATE matche xmin, l'autre lève DbUpdateConcurrencyException.
-        builder.UseXminAsConcurrencyToken();
+        // Note : UseXminAsConcurrencyToken() a été supprimé dans Npgsql EF Core v10 ; on déclare la propriété ombre manuellement.
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }
