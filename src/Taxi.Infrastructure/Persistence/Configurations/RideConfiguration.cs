@@ -23,5 +23,14 @@ internal sealed class RideConfiguration : IEntityTypeConfiguration<Ride>
         builder.HasIndex(r => r.ClientId);
         builder.HasIndex(r => r.DriverId);
         builder.HasIndex(r => r.Status);
+
+        // Vague de chauffeurs offerts : champ privé _offeredDriverIds exposé via OfferedDriverIds.
+        builder.Property<List<int>>("_offeredDriverIds")
+            .HasColumnName("offered_driver_ids")
+            .HasDefaultValueSql("'{}'::integer[]");
+
+        // Verrou optimiste : la colonne système PostgreSQL xmin sert de token de concurrence.
+        // Deux acceptations simultanées → un seul UPDATE matche xmin, l'autre lève DbUpdateConcurrencyException.
+        builder.UseXminAsConcurrencyToken();
     }
 }
