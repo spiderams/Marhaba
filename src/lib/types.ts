@@ -44,10 +44,22 @@ export interface DriverDto {
   averageRating: number;
 }
 
-/** Réponse d'authentification (miroir des tokens émis par TokenService). */
-export interface AuthTokens {
+/** Utilisateur connecté (renvoyé dans la réponse de login). */
+export interface AuthUser {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  roles: Role[];
+}
+
+/** Réponse d'authentification (miroir exact de la réponse de POST /api/auth/login). */
+export interface AuthResponse {
   accessToken: string;
+  expiresAt: string; // ISO 8601
+  tokenType: string; // "Bearer"
   refreshToken: string;
+  refreshTokenExpiresAt: string; // ISO 8601
+  user: AuthUser;
 }
 
 // --- Événements SignalR (RideHub) — payloads reçus par l'app chauffeur ---

@@ -1,12 +1,16 @@
 import { API_BASE_URL } from './config';
 import { getAccessToken } from './auth';
-import type { AuthTokens, DriverDto, RideDto } from './types';
+import type { AuthResponse, DriverDto, RideDto } from './types';
 
 /**
- * Client HTTP minimal pour l'API TaxiDjibouti.
+ * Client HTTP de l'API TaxiDjibouti.
  *
- * Toutes les routes protégées passent le JWT en en-tête Authorization.
- * Le backend renvoie des erreurs typées (Result/Error) mappées en codes HTTP
+ * Inspiré du pattern du projet EchoIA (axiosManager) : une couche centrale qui
+ * ajoute AUTOMATIQUEMENT l'en-tête `Authorization: Bearer <token>` à chaque
+ * requête authentifiée — on n'a donc pas à le répéter à chaque appel.
+ * Ici on utilise `fetch` (intégré, aucune dépendance) au lieu d'axios.
+ *
+ * Le backend renvoie des erreurs typées mappées en codes HTTP
  * (400/401/403/404/409/500) ; on les remonte sous forme d'ApiError.
  */
 
@@ -29,6 +33,7 @@ async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
+  // Interceptor "maison" : on attache le jeton si la requête est authentifiée.
   if (auth) {
     const token = await getAccessToken();
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -52,9 +57,12 @@ async function request<T>(
 
 /** API regroupée par domaine — reflète les endpoints réels du backend. */
 export const api = {
-  /** POST /api/auth/login — connexion par téléphone + mot de passe. */
+  /**
+   * POST /api/auth/login — connexion par téléphone + mot de passe.
+   * Le numéro est envoyé tel quel (sans préfixe), comme attendu par le backend.
+   */
   login: (phoneNumber: string, password: string) =>
-    request<AuthTokens>('POST', '/api/auth/login', { phoneNumber, password }, false),
+    request<AuthResponse>('POST', '/api/auth/login', { phoneNumber, password }, false),
 
   /** GET /api/drivers/me — profil chauffeur courant. */
   getMyDriver: () => request<DriverDto>('GET', '/api/drivers/me'),
