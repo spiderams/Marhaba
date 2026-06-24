@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { TopBar } from '@/components/dashboard/TopBar';
 import { MapPlaceholder } from '@/components/dashboard/MapPlaceholder';
 import { EarningsCard } from '@/components/dashboard/EarningsCard';
 import { BottomNav } from '@/components/dashboard/BottomNav';
+import { clearTokens } from '@/lib/auth';
 import { colors } from '@/theme/colors';
 
 /**
@@ -24,15 +26,19 @@ export default function DashboardScreen() {
   const [online, setOnline] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
 
+  /** Déconnexion : on efface les jetons et on retourne à l'écran de connexion. */
+  async function handleLogout() {
+    await clearTokens();
+    router.replace('/login');
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top', 'bottom']}>
-      {/* 1. Barre supérieure */}
+      {/* 1. Barre supérieure (le bouton menu déconnecte, en attendant le vrai menu latéral) */}
       <TopBar
         online={online}
         onToggleOnline={() => setOnline((v) => !v)}
-        onOpenMenu={() => {
-          // Le menu latéral sera branché plus tard.
-        }}
+        onOpenMenu={handleLogout}
       />
 
       {/* 2. Zone centrale : la carte en fond + éléments flottants par-dessus. */}
