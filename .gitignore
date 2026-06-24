@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# dépôt imbriqué créé par erreur (à supprimer manuellement quand Expo est arrêté)
+/TaxiDjibouti.DriverApp

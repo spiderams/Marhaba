@@ -1,98 +1,85 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { TopBar } from '@/components/dashboard/TopBar';
+import { MapPlaceholder } from '@/components/dashboard/MapPlaceholder';
+import { EarningsCard } from '@/components/dashboard/EarningsCard';
+import { BottomNav } from '@/components/dashboard/BottomNav';
+import { colors } from '@/theme/colors';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+/**
+ * TABLEAU DE BORD DU CHAUFFEUR (écran d'accueil).
+ *
+ * Cet écran ne fait qu'ASSEMBLER les composants du dossier components/dashboard.
+ * On voit d'un coup d'œil sa structure : une barre en haut, une carte en fond,
+ * et des éléments flottants par-dessus (gains, boutons, navigation).
+ *
+ * Il gère le minimum d'état : si le chauffeur est en ligne ou non, et l'onglet
+ * actif de la barre du bas. (Plus tard, "en ligne" déclenchera l'appel API
+ * set-availability et la connexion SignalR.)
+ */
+export default function DashboardScreen() {
+  const [online, setOnline] = useState(true);
+  const [activeTab, setActiveTab] = useState('home');
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top', 'bottom']}>
+      {/* 1. Barre supérieure */}
+      <TopBar
+        online={online}
+        onToggleOnline={() => setOnline((v) => !v)}
+        onOpenMenu={() => {
+          // Le menu latéral sera branché plus tard.
+        }}
+      />
+
+      {/* 2. Zone centrale : la carte en fond + éléments flottants par-dessus. */}
+      <View style={{ flex: 1 }}>
+        <MapPlaceholder />
+
+        {/* Boutons d'action flottants (ma position + éclair). */}
+        <View style={{ position: 'absolute', right: 16, bottom: 140, gap: 16 }}>
+          <Pressable style={floatingButton(colors.white)}>
+            <MaterialIcons name="my-location" size={24} color={colors.primary} />
+          </Pressable>
+          <Pressable style={floatingButton(colors.secondaryContainer)}>
+            <MaterialIcons name="bolt" size={24} color={colors.onSecondaryContainer} />
+          </Pressable>
+        </View>
+
+        {/* Carte flottante des gains, ancrée en bas. */}
+        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 16 }}>
+          <EarningsCard
+            amount={12450}
+            trendPercent={12}
+            onPressDetails={() => {
+              // Écran de détails des gains à venir.
+            }}
+          />
+        </View>
+      </View>
+
+      {/* 3. Navigation du bas. */}
+      <BottomNav activeKey={activeTab} onSelect={setActiveTab} />
+    </SafeAreaView>
   );
 }
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
+/** Style commun des deux boutons ronds flottants (évite la répétition). */
+function floatingButton(backgroundColor: string) {
+  return {
+    width: 56,
+    height: 56,
+    borderRadius: 9999,
+    backgroundColor,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  };
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
