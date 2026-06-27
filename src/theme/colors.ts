@@ -1,34 +1,30 @@
 /**
- * Couleurs du design TaxiDjibouti (extraites de DESIGN.md).
+ * Couleurs du design TaxiDjibouti, pour le code TypeScript.
  *
- * On les centralise ici pour les réutiliser partout, plutôt que d'écrire
- * des codes hexadécimaux un peu partout dans le code. Si une couleur change,
- * on ne la modifie qu'à UN seul endroit.
+ * Les VALEURS vivent dans `palette.js` (source unique partagée avec
+ * tailwind.config.js). Ici on ne fait que les réexporter en typé `as const`,
+ * pour que l'autocomplétion fonctionne (`colors.primary`, `colors.surface`, ...)
+ * et que TypeScript vérifie qu'on n'utilise pas une couleur qui n'existe pas.
+ *
+ * Usage : pour les props de couleur (icônes MaterialIcons, StatusBar...) et les
+ * rares styles inline. Pour le style des vues, préférer les classes NativeWind
+ * (bg-primary, text-on-surface...) générées depuis la même palette.
  */
-export const colors = {
-  /** Bleu Djibouti profond — navigation, boutons principaux, marque. */
-  primary: '#001e40',
-  primaryContainer: '#003366',
-  onPrimaryContainer: '#799dd6',
+import palette from './palette';
 
-  /** Jaune Taxi — actions importantes (Accepter une course, Passer en ligne). */
-  secondaryContainer: '#fecb00',
-  onSecondaryContainer: '#6e5700',
-
-  /** Surfaces (fonds). */
-  surface: '#f9f9fe',
-  surfaceContainer: '#eeedf2',
-  surfaceContainerHigh: '#e8e8ed',
-  white: '#ffffff',
-
-  /** Textes. */
-  onSurface: '#1a1c1f',
-  onSurfaceVariant: '#43474f',
-
-  /** Bordures. */
-  outlineVariant: '#c3c6d1',
-
-  /** États (statuts). */
-  statusSuccess: '#00875A',
-  statusError: '#D32F2F',
-} as const;
+export const colors = palette as {
+  readonly primary: string;
+  readonly primaryContainer: string;
+  readonly onPrimaryContainer: string;
+  readonly secondaryContainer: string;
+  readonly onSecondaryContainer: string;
+  readonly surface: string;
+  readonly surfaceContainer: string;
+  readonly surfaceContainerHigh: string;
+  readonly white: string;
+  readonly onSurface: string;
+  readonly onSurfaceVariant: string;
+  readonly outlineVariant: string;
+  readonly statusSuccess: string;
+  readonly statusError: string;
+};

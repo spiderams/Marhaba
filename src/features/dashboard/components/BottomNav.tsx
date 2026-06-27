@@ -23,39 +23,24 @@ const TABS: Tab[] = [
   { key: 'help', label: 'Aide', icon: 'support-agent' },
 ];
 
-type Props = {
+type Props = Readonly<{
   activeKey: string;
   onSelect: (key: string) => void;
-};
+}>;
 
 export function BottomNav({ activeKey, onSelect }: Props) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderTopWidth: 1,
-        borderTopColor: colors.outlineVariant,
-        paddingVertical: 8,
-      }}
-    >
+    <View className="flex-row items-center justify-around border-t border-outline-variant bg-surface py-2">
       {TABS.map((tab) => {
         const isActive = tab.key === activeKey;
         return (
           <Pressable
             key={tab.key}
             onPress={() => onSelect(tab.key)}
-            style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 72,
-              height: 64,
-              borderRadius: 12,
-              // L'onglet actif a un fond bleu clair.
-              backgroundColor: isActive ? colors.primaryContainer : 'transparent',
-            }}
+            // L'onglet actif a un fond bleu clair (classe conditionnelle).
+            className={`h-16 min-w-[72px] items-center justify-center rounded-xl ${
+              isActive ? 'bg-primary-container' : 'bg-transparent'
+            }`}
           >
             <MaterialIcons
               name={tab.icon}
@@ -63,12 +48,9 @@ export function BottomNav({ activeKey, onSelect }: Props) {
               color={isActive ? colors.onPrimaryContainer : colors.onSurfaceVariant}
             />
             <Text
-              style={{
-                fontSize: 12,
-                marginTop: 4,
-                fontWeight: '700',
-                color: isActive ? colors.onPrimaryContainer : colors.onSurfaceVariant,
-              }}
+              className={`mt-1 text-xs font-bold ${
+                isActive ? 'text-on-primary-container' : 'text-on-surface-variant'
+              }`}
             >
               {tab.label}
             </Text>
