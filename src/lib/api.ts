@@ -31,7 +31,12 @@ async function request<T>(
   body?: unknown,
   auth = true,
 ): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    // Désactive la page d'avertissement HTML que ngrok (plan gratuit) intercale
+    // sinon devant l'API → garantit qu'on reçoit bien le JSON. Sans effet hors ngrok.
+    'ngrok-skip-browser-warning': 'true',
+  };
 
   // Interceptor "maison" : on attache le jeton si la requête est authentifiée.
   if (auth) {
