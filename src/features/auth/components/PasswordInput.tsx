@@ -10,39 +10,21 @@ import { colors } from '@/theme/colors';
  * En revanche, le fait de montrer ou masquer le texte est un détail purement
  * visuel local → on le gère ICI avec un useState interne (`hidden`).
  */
-type Props = {
+type Props = Readonly<{
   value: string;
   onChangeText: (text: string) => void;
-};
+}>;
 
 export function PasswordInput({ value, onChangeText }: Props) {
   const [hidden, setHidden] = useState(true);
 
   return (
-    <View style={{ gap: 8 }}>
-      <Text
-        style={{
-          fontWeight: '700',
-          fontSize: 14,
-          color: colors.onSurfaceVariant,
-          marginLeft: 4,
-        }}
-      >
+    <View className="gap-2">
+      <Text className="ml-1 text-sm font-bold text-on-surface-variant">
         Mot de passe
       </Text>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          height: 56,
-          borderWidth: 1,
-          borderColor: colors.outlineVariant,
-          borderRadius: 8,
-          backgroundColor: colors.white,
-          paddingHorizontal: 16,
-        }}
-      >
+      <View className="h-14 flex-row items-center rounded-lg border border-outline-variant bg-white px-4">
         {/* secureTextEntry masque le texte (points) quand hidden est vrai. */}
         <TextInput
           value={value}
@@ -50,7 +32,7 @@ export function PasswordInput({ value, onChangeText }: Props) {
           placeholder="••••••••"
           placeholderTextColor={colors.outlineVariant}
           secureTextEntry={hidden}
-          style={{ flex: 1, fontSize: 18, color: colors.onSurface, height: '100%' }}
+          className="h-full flex-1 text-lg text-on-surface"
         />
 
         {/* Bouton œil : bascule l'affichage. */}

@@ -4,17 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { TopBar } from '@/components/dashboard/TopBar';
-import { MapPlaceholder } from '@/components/dashboard/MapPlaceholder';
-import { EarningsCard } from '@/components/dashboard/EarningsCard';
-import { BottomNav } from '@/components/dashboard/BottomNav';
+import { TopBar } from './components/TopBar';
+import { MapPlaceholder } from './components/MapPlaceholder';
+import { EarningsCard } from './components/EarningsCard';
+import { BottomNav } from './components/BottomNav';
 import { clearTokens } from '@/lib/auth';
 import { colors } from '@/theme/colors';
 
 /**
  * TABLEAU DE BORD DU CHAUFFEUR (écran d'accueil).
  *
- * Cet écran ne fait qu'ASSEMBLER les composants du dossier components/dashboard.
+ * Cet écran ne fait qu'ASSEMBLER les composants de ./components.
  * On voit d'un coup d'œil sa structure : une barre en haut, une carte en fond,
  * et des éléments flottants par-dessus (gains, boutons, navigation).
  *
@@ -22,7 +22,7 @@ import { colors } from '@/theme/colors';
  * actif de la barre du bas. (Plus tard, "en ligne" déclenchera l'appel API
  * set-availability et la connexion SignalR.)
  */
-export default function DashboardScreen() {
+export function DashboardScreen() {
   const [online, setOnline] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
 
@@ -33,7 +33,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top', 'bottom']}>
       {/* 1. Barre supérieure (le bouton menu déconnecte, en attendant le vrai menu latéral) */}
       <TopBar
         online={online}
@@ -42,21 +42,21 @@ export default function DashboardScreen() {
       />
 
       {/* 2. Zone centrale : la carte en fond + éléments flottants par-dessus. */}
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
         <MapPlaceholder />
 
         {/* Boutons d'action flottants (ma position + éclair). */}
-        <View style={{ position: 'absolute', right: 16, bottom: 140, gap: 16 }}>
-          <Pressable style={floatingButton(colors.white)}>
+        <View className="absolute bottom-[140px] right-4 gap-4">
+          <Pressable style={floatingShadow} className="h-14 w-14 items-center justify-center rounded-full bg-white">
             <MaterialIcons name="my-location" size={24} color={colors.primary} />
           </Pressable>
-          <Pressable style={floatingButton(colors.secondaryContainer)}>
+          <Pressable style={floatingShadow} className="h-14 w-14 items-center justify-center rounded-full bg-secondary-container">
             <MaterialIcons name="bolt" size={24} color={colors.onSecondaryContainer} />
           </Pressable>
         </View>
 
         {/* Carte flottante des gains, ancrée en bas. */}
-        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 16 }}>
+        <View className="absolute inset-x-4 bottom-4">
           <EarningsCard
             amount={12450}
             trendPercent={12}
@@ -73,19 +73,10 @@ export default function DashboardScreen() {
   );
 }
 
-/** Style commun des deux boutons ronds flottants (évite la répétition). */
-function floatingButton(backgroundColor: string) {
-  return {
-    width: 56,
-    height: 56,
-    borderRadius: 9999,
-    backgroundColor,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  };
-}
+/**
+ * Ombre portée commune des boutons flottants (pas d'équivalent NativeWind).
+ * `boxShadow` = API moderne RN 0.81+ remplaçant les anciennes props shadow/elevation.
+ */
+const floatingShadow = {
+  boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+} as const;

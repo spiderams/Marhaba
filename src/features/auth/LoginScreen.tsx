@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { PhoneInput } from '@/components/auth/PhoneInput';
-import { PasswordInput } from '@/components/auth/PasswordInput';
-import { PrimaryButton } from '@/components/auth/PrimaryButton';
+import { PhoneInput } from './components/PhoneInput';
+import { PasswordInput } from './components/PasswordInput';
+import { PrimaryButton } from './components/PrimaryButton';
 import { api, ApiError } from '@/lib/api';
 import { saveTokens } from '@/lib/auth';
 import { colors } from '@/theme/colors';
@@ -23,7 +23,7 @@ import { colors } from '@/theme/colors';
  * - loading : true pendant l'appel réseau (désactive le bouton).
  * - error : message d'erreur à afficher si la connexion échoue.
  */
-export default function LoginScreen() {
+export function LoginScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,40 +55,34 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
+    <SafeAreaView className="flex-1 bg-surface">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Marque */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 }}>
+        <View className="mt-4 flex-row items-center gap-2">
           <MaterialIcons name="local-taxi" size={28} color={colors.primary} />
-          <Text style={{ fontSize: 22, fontWeight: '700', color: colors.primary }}>
-            DjiboutiRide
-          </Text>
+          <Text className="text-[22px] font-bold text-primary">DjiboutiRide</Text>
         </View>
 
         {/* Accroche */}
-        <View style={{ marginTop: 40, marginBottom: 32 }}>
-          <Text style={{ fontSize: 26, fontWeight: '700', color: colors.primary, marginBottom: 8 }}>
-            Bienvenue
-          </Text>
-          <Text style={{ fontSize: 16, color: colors.onSurfaceVariant, lineHeight: 24 }}>
+        <View className="mb-8 mt-10">
+          <Text className="mb-2 text-[26px] font-bold text-primary">Bienvenue</Text>
+          <Text className="text-base leading-6 text-on-surface-variant">
             Connectez-vous pour commencer votre trajet avec le service le plus fiable de Djibouti.
           </Text>
         </View>
 
         {/* Formulaire */}
-        <View style={{ gap: 20 }}>
+        <View className="gap-5">
           <PhoneInput value={phone} onChangeText={setPhone} />
           <PasswordInput value={password} onChangeText={setPassword} />
 
-          {/* Message d'erreur (affiché seulement s'il y en a un). */}
-          {error && (
-            <Text style={{ color: colors.statusError, fontSize: 14, marginLeft: 4 }}>
-              {error}
-            </Text>
-          )}
+          {/* Message d'erreur (affiché seulement s'il y en a un).
+              On teste `!== null` explicitement pour ne jamais rendre une valeur
+              falsy par accident (bonne pratique JSX). */}
+          {error !== null && <Text className="ml-1 text-sm text-status-error">{error}</Text>}
 
           <PrimaryButton
             label="Se connecter"
@@ -99,15 +93,8 @@ export default function LoginScreen() {
         </View>
 
         {/* Mentions légales, poussées en bas. */}
-        <View style={{ marginTop: 'auto', paddingTop: 32 }}>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.onSurfaceVariant,
-              textAlign: 'center',
-              lineHeight: 18,
-            }}
-          >
+        <View className="mt-auto pt-8">
+          <Text className="text-center text-xs leading-[18px] text-on-surface-variant">
             En continuant, vous acceptez nos Conditions d'utilisation et notre Politique de
             confidentialité.
           </Text>

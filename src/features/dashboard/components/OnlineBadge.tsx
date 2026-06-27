@@ -9,11 +9,15 @@ import { colors } from '@/theme/colors';
  * à appeler quand on tape dessus (prop `onToggle`). C'est le parent qui décide
  * quoi faire (plus tard : appeler l'API set-availability du backend).
  */
-type Props = {
+type Props = Readonly<{
   online: boolean;
   onToggle: () => void;
-};
+}>;
 
+// NOTE STYLE : ce composant garde `style={{}}` volontairement. Les couleurs sont
+// calculées à l'exécution (vert/rouge selon l'état + opacité hex `${color}1A`),
+// ce que les classes NativeWind statiques ne savent pas exprimer. Règle du projet :
+// NativeWind (className) pour le style statique, `style` pour le dynamique calculé.
 export function OnlineBadge({ online, onToggle }: Props) {
   // Selon l'état, on choisit la couleur et le texte.
   const color = online ? colors.statusSuccess : colors.statusError;

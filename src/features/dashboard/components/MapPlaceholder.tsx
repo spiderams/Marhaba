@@ -12,39 +12,14 @@ import { colors } from '@/theme/colors';
  */
 export function MapPlaceholder() {
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.surfaceContainer,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <View className="flex-1 items-center justify-center bg-surface-container">
       {/* Marqueur de position du chauffeur (le taxi noir de la maquette). */}
-      <View
-        style={{
-          backgroundColor: colors.primary,
-          padding: 10,
-          borderRadius: 12,
-        }}
-      >
+      <View className="rounded-xl bg-primary p-2.5">
         <MaterialIcons name="local-taxi" size={32} color={colors.white} />
       </View>
-      <View
-        style={{
-          width: 14,
-          height: 14,
-          borderRadius: 9999,
-          backgroundColor: colors.primary,
-          borderWidth: 2,
-          borderColor: colors.white,
-          marginTop: 4,
-        }}
-      />
+      <View className="mt-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-primary" />
 
-      <Text style={{ marginTop: 16, color: colors.onSurfaceVariant, fontSize: 13 }}>
-        Carte (à venir)
-      </Text>
+      <Text className="mt-4 text-[13px] text-on-surface-variant">Carte (à venir)</Text>
     </View>
   );
 }

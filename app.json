@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TaxiDjibouti.DriverApp",
-    "slug": "TaxiDjibouti.DriverApp",
+    "slug": "taxidjibouti-driverapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -38,7 +38,6 @@
       "expo-secure-store"
     ],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
     }
   }
