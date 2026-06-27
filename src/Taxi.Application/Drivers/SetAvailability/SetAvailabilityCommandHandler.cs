@@ -18,7 +18,18 @@ internal sealed class SetAvailabilityCommandHandler(IRepository<Driver> drivers)
         if (driver is null)
             return Result.Failure<DriverDto>(Error.NotFound("Driver.NotFound", "Profil chauffeur introuvable."));
 
-        driver.SetAvailability(command.IsAvailable);
+        if (command.IsAvailable)
+        {
+            // Le validateur garantit la présence des coordonnées lorsque le chauffeur se met disponible.
+            var online = driver.GoOnline(command.Latitude!.Value, command.Longitude!.Value);
+            if (online.IsFailure)
+                return Result.Failure<DriverDto>(online.Error);
+        }
+        else
+        {
+            driver.GoOffline();
+        }
+
         await drivers.UpdateAsync(driver, cancellationToken);
         return DriverDto.From(driver);
     }

@@ -50,4 +50,29 @@ public class DriverTests
         driver.UpdateAverageRating(4.5);
         driver.AverageRating.Should().Be(4.5);
     }
+
+    [Fact]
+    public void GoOnline_should_set_position_and_make_available()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+
+        var result = driver.GoOnline(11.58, 43.14);
+
+        result.IsSuccess.Should().BeTrue();
+        driver.IsAvailable.Should().BeTrue();
+        driver.LastLatitude.Should().Be(11.58);
+        driver.LastLongitude.Should().Be(43.14);
+        driver.LastLocationAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GoOffline_should_clear_availability()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.GoOnline(11.58, 43.14);
+
+        driver.GoOffline();
+
+        driver.IsAvailable.Should().BeFalse();
+    }
 }

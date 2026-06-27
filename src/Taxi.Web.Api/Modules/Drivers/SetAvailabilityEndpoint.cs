@@ -7,7 +7,7 @@ using Taxi.Web.Api.Endpoints;
 
 namespace Taxi.Web.Api.Modules.Drivers;
 
-public sealed record SetAvailabilityRequest(bool IsAvailable);
+public sealed record SetAvailabilityRequest(bool IsAvailable, double? Latitude, double? Longitude);
 
 /// <summary>
 /// Endpoints REST du module Drivers (basculement de la disponibilité du chauffeur).
@@ -26,13 +26,14 @@ public sealed class SetAvailabilityEndpoint : IEndpoint
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var result = await handler.Handle(new SetAvailabilityCommand(userId, body.IsAvailable), ct);
+            var result = await handler.Handle(
+                new SetAvailabilityCommand(userId, body.IsAvailable, body.Latitude, body.Longitude), ct);
             return result.ToHttpResult();
         })
         .RequireAuthorization(policy => policy.RequireRole(RoleNames.Driver))
         .WithName("SetDriverAvailability")
         .WithTags(Tags.Drivers)
         .WithSummary("Définir ma disponibilité")
-        .WithDescription("Bascule la disponibilité du chauffeur courant.");
+        .WithDescription("Bascule la disponibilité du chauffeur courant. Les coordonnées GPS sont requises lors de la mise en ligne afin d'alimenter le dispatch de proximité.");
     }
 }

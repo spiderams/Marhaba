@@ -32,6 +32,19 @@ builder.Services.AddEndpoints();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
+// CORS de développement : autorise l'app mobile Expo (mode web) à appeler l'API
+// et le hub SignalR. AllowCredentials est requis par SignalR et interdit le
+// wildcard "*", d'où la liste explicite des origines de développement.
+const string DevCorsPolicy = "DevCors";
+builder.Services.AddCors(options =>
+    options.AddPolicy(DevCorsPolicy, policy => policy
+        .WithOrigins(
+            "http://localhost:8081",  // Expo web (Metro)
+            "http://localhost:19006") // Expo web (ancien port)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -50,6 +63,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseCors(DevCorsPolicy);
 }
 
 app.UseAuthentication();
