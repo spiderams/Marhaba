@@ -47,8 +47,26 @@ public sealed class Driver : Entity
 
     /// <summary>
     /// Bascule la disponibilité du chauffeur : seul un chauffeur disponible peut recevoir de nouvelles courses.
+    /// Utilisé par le cycle de vie des courses pour marquer le chauffeur occupé (false) puis libre (true).
     /// </summary>
     public void SetAvailability(bool isAvailable) => IsAvailable = isAvailable;
+
+    /// <summary>
+    /// Action manuelle du chauffeur qui se met en ligne : capte sa position GPS courante (indispensable
+    /// pour être éligible au dispatch de proximité) et le rend disponible. Retourne un <see cref="Result"/>
+    /// afin de pouvoir, à terme, refuser la mise en ligne d'un chauffeur non approuvé ou suspendu.
+    /// </summary>
+    public Result GoOnline(double latitude, double longitude)
+    {
+        UpdateLocation(latitude, longitude);
+        IsAvailable = true;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Action manuelle du chauffeur qui se met hors-ligne : il cesse de recevoir de nouvelles offres.
+    /// </summary>
+    public void GoOffline() => IsAvailable = false;
 
     /// <summary>
     /// Recalcule et enregistre la note moyenne du chauffeur après chaque nouvelle évaluation client.
