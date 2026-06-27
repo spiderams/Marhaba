@@ -56,6 +56,12 @@ export function useDriverLocation(): {
           },
         );
         subscriptionRef.current = subscription;
+        // Si le composant a été démonté pendant l'attente ci-dessus, on coupe
+        // tout de suite l'abonnement (sinon il fuirait : la cleanup a déjà tourné).
+        if (cancelled) {
+          subscription.remove();
+          subscriptionRef.current = null;
+        }
       } catch (e) {
         if (!cancelled) {
           setError('Impossible de lire la position GPS.');
