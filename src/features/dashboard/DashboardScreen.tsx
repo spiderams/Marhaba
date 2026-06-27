@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { TopBar } from './components/TopBar';
-import { MapPlaceholder } from './components/MapPlaceholder';
+import { DriverMap, type DriverMapHandle } from './components/DriverMap';
 import { EarningsCard } from './components/EarningsCard';
 import { BottomNav } from './components/BottomNav';
 import { clearTokens } from '@/lib/auth';
@@ -25,6 +25,8 @@ import { colors } from '@/theme/colors';
 export function DashboardScreen() {
   const [online, setOnline] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
+  // Référence vers la carte pour déclencher le recentrage depuis le bouton flottant.
+  const mapRef = useRef<DriverMapHandle>(null);
 
   /** Déconnexion : on efface les jetons et on retourne à l'écran de connexion. */
   async function handleLogout() {
@@ -43,11 +45,15 @@ export function DashboardScreen() {
 
       {/* 2. Zone centrale : la carte en fond + éléments flottants par-dessus. */}
       <View className="flex-1">
-        <MapPlaceholder />
+        <DriverMap ref={mapRef} />
 
         {/* Boutons d'action flottants (ma position + éclair). */}
         <View className="absolute bottom-[140px] right-4 gap-4">
-          <Pressable style={floatingShadow} className="h-14 w-14 items-center justify-center rounded-full bg-white">
+          <Pressable
+            onPress={() => mapRef.current?.recenter()}
+            style={floatingShadow}
+            className="h-14 w-14 items-center justify-center rounded-full bg-white"
+          >
             <MaterialIcons name="my-location" size={24} color={colors.primary} />
           </Pressable>
           <Pressable style={floatingShadow} className="h-14 w-14 items-center justify-center rounded-full bg-secondary-container">
