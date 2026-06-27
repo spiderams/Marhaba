@@ -1,5 +1,9 @@
 # Carte + position du chauffeur — Design
 
+> **Statut : implémenté et validé sur téléphone (2026-06-27).** Vérification réelle
+> OK (Task 5) : permission demandée, carte centrée sur la position, marqueur,
+> recentrage via le bouton flottant. Revue finale : prêt à merger.
+
 > Première étape de la carte du tableau de bord chauffeur. On construit la
 > **fondation** : afficher une vraie carte centrée sur la position GPS du
 > chauffeur, avec un marqueur qui suit ses déplacements. Les étapes ultérieures
