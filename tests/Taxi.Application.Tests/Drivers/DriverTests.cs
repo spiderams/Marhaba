@@ -76,4 +76,102 @@ public class DriverTests
 
         driver.IsAvailable.Should().BeFalse();
     }
+
+    [Fact]
+    public void Approve_should_move_pending_driver_to_approved()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+
+        var result = driver.Approve();
+
+        result.IsSuccess.Should().BeTrue();
+        driver.Status.Should().Be(DriverStatus.Approved);
+    }
+
+    [Fact]
+    public void Approve_should_reactivate_a_suspended_driver()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+        driver.Suspend();
+
+        var result = driver.Approve();
+
+        result.IsSuccess.Should().BeTrue();
+        driver.Status.Should().Be(DriverStatus.Approved);
+    }
+
+    [Fact]
+    public void Approve_should_fail_when_already_approved()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+
+        var result = driver.Approve();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(DriverErrors.InvalidStatusTransition);
+        driver.Status.Should().Be(DriverStatus.Approved);
+    }
+
+    [Fact]
+    public void Approve_should_fail_when_driver_is_rejected()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Reject();
+
+        var result = driver.Approve();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(DriverErrors.InvalidStatusTransition);
+        driver.Status.Should().Be(DriverStatus.Rejected);
+    }
+
+    [Fact]
+    public void Suspend_should_move_approved_driver_to_suspended()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+
+        var result = driver.Suspend();
+
+        result.IsSuccess.Should().BeTrue();
+        driver.Status.Should().Be(DriverStatus.Suspended);
+    }
+
+    [Fact]
+    public void Suspend_should_fail_when_driver_is_not_approved()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+
+        var result = driver.Suspend();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(DriverErrors.InvalidStatusTransition);
+        driver.Status.Should().Be(DriverStatus.PendingApproval);
+    }
+
+    [Fact]
+    public void Reject_should_move_pending_driver_to_rejected()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+
+        var result = driver.Reject();
+
+        result.IsSuccess.Should().BeTrue();
+        driver.Status.Should().Be(DriverStatus.Rejected);
+    }
+
+    [Fact]
+    public void Reject_should_fail_when_driver_is_already_approved()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+
+        var result = driver.Reject();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(DriverErrors.InvalidStatusTransition);
+        driver.Status.Should().Be(DriverStatus.Approved);
+    }
 }

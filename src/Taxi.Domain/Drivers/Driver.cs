@@ -40,6 +40,47 @@ public sealed class Driver : Entity
         };
 
     /// <summary>
+    /// Approbation par un administrateur : autorise le chauffeur à recevoir des courses.
+    /// Applicable à un chauffeur en attente de validation (<see cref="DriverStatus.PendingApproval"/>)
+    /// ou à un chauffeur suspendu que l'on réactive (<see cref="DriverStatus.Suspended"/>).
+    /// Échoue si le chauffeur est déjà approuvé ou définitivement rejeté.
+    /// </summary>
+    public Result Approve()
+    {
+        if (Status is not (DriverStatus.PendingApproval or DriverStatus.Suspended))
+            return Result.Failure(DriverErrors.InvalidStatusTransition);
+
+        Status = DriverStatus.Approved;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Suspension par un administrateur : le chauffeur cesse immédiatement de recevoir des offres.
+    /// Applicable uniquement à un chauffeur actuellement approuvé (<see cref="DriverStatus.Approved"/>).
+    /// </summary>
+    public Result Suspend()
+    {
+        if (Status != DriverStatus.Approved)
+            return Result.Failure(DriverErrors.InvalidStatusTransition);
+
+        Status = DriverStatus.Suspended;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Rejet définitif d'une candidature par un administrateur : statut terminal.
+    /// Applicable uniquement à un chauffeur en attente de validation (<see cref="DriverStatus.PendingApproval"/>).
+    /// </summary>
+    public Result Reject()
+    {
+        if (Status != DriverStatus.PendingApproval)
+            return Result.Failure(DriverErrors.InvalidStatusTransition);
+
+        Status = DriverStatus.Rejected;
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Met à jour les informations du véhicule et de la licence du chauffeur.
     /// </summary>
     public void UpdateProfile(string licenseNumber, string vehiclePlate, string vehicleType)
