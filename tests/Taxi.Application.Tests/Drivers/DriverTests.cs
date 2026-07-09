@@ -17,6 +17,7 @@ public class DriverTests
         driver.VehicleType.Should().Be("Taxi");
         driver.IsAvailable.Should().BeFalse();
         driver.AverageRating.Should().Be(0);
+        driver.Status.Should().Be(DriverStatus.PendingApproval);
     }
 
     [Fact]

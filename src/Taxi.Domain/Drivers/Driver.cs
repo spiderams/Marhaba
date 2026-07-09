@@ -14,6 +14,7 @@ public sealed class Driver : Entity
     public string VehiclePlate { get; private set; } = string.Empty;
     public string VehicleType { get; private set; } = "Taxi";
     public bool IsAvailable { get; private set; }
+    public DriverStatus Status { get; private set; }
     public double AverageRating { get; private set; }
     public Point? LastLocation { get; private set; }
     public DateTime? LastLocationAt { get; private set; }
@@ -25,6 +26,8 @@ public sealed class Driver : Entity
 
     /// <summary>
     /// Crée un nouveau profil chauffeur associé à un utilisateur identité existant.
+    /// Le chauffeur naît en <see cref="DriverStatus.PendingApproval"/> : il ne pourra
+    /// recevoir de courses qu'après approbation explicite d'un administrateur (KYC).
     /// </summary>
     public static Driver Create(string userId, string licenseNumber, string vehiclePlate, string vehicleType)
         => new()
@@ -32,7 +35,8 @@ public sealed class Driver : Entity
             UserId = userId,
             LicenseNumber = licenseNumber,
             VehiclePlate = vehiclePlate,
-            VehicleType = vehicleType
+            VehicleType = vehicleType,
+            Status = DriverStatus.PendingApproval
         };
 
     /// <summary>
