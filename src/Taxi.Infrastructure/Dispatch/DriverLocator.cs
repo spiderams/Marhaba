@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using Taxi.Application.Dispatch;
+using Taxi.Domain.Drivers;
 using Taxi.Infrastructure.Persistence;
 
 namespace Taxi.Infrastructure.Dispatch;
@@ -20,7 +21,8 @@ internal sealed class DriverLocator(AppDbContext db) : IDriverLocator
         // ensuite EN MÉMOIRE car PostGIS n'expose ST_X/ST_Y que pour le type geometry,
         // jamais pour geography.
         var rows = await db.Drivers
-            .Where(d => d.IsAvailable
+            .Where(d => d.Status == DriverStatus.Approved
+                && d.IsAvailable
                 && d.LastLocation != null
                 && d.LastLocationAt >= cutoff
                 && d.LastLocation.IsWithinDistance(pickup, radiusMeters))

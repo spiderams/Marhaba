@@ -13,6 +13,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Taxi.Application.Tests/Taxi.Application.Tests.csproj" />
     <Project Path="tests/Taxi.Architecture.Tests/Taxi.Architecture.Tests.csproj" />
+    <Project Path="tests/Taxi.IntegrationTests/Taxi.IntegrationTests.csproj" />
   </Folder>
   <Project Path="Taxi.AppHost/Taxi.AppHost.csproj" />
   <Project Path="Taxi.ServiceDefaults/Taxi.ServiceDefaults.csproj" />

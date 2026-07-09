@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Taxi.Application.Tests" />
+    <InternalsVisibleTo Include="Taxi.IntegrationTests" />
   </ItemGroup>
 
 </Project>
