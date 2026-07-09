@@ -42,4 +42,14 @@ public sealed class PostgisContainerFixture : IAsyncLifetime
 
         return new AppDbContext(options);
     }
+
+    /// <summary>
+    /// Vide la table des chauffeurs afin que chaque test parte d'un état propre :
+    /// le conteneur étant partagé par la classe, cette réinitialisation garantit l'isolation entre tests.
+    /// </summary>
+    public async Task ResetDriversAsync()
+    {
+        await using var db = CreateContext();
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE drivers RESTART IDENTITY CASCADE;");
+    }
 }
