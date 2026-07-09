@@ -174,4 +174,44 @@ public class DriverTests
         result.Error.Should().Be(DriverErrors.InvalidStatusTransition);
         driver.Status.Should().Be(DriverStatus.Approved);
     }
+
+    [Fact]
+    public void CanReceiveRides_is_true_when_approved_and_available()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+        driver.SetAvailability(true);
+
+        driver.CanReceiveRides.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanReceiveRides_is_false_when_approved_but_unavailable()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+        driver.SetAvailability(false);
+
+        driver.CanReceiveRides.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CanReceiveRides_is_false_when_available_but_not_approved()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.SetAvailability(true); // reste PendingApproval
+
+        driver.CanReceiveRides.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CanReceiveRides_is_false_when_suspended_even_if_available()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.Approve();
+        driver.Suspend();
+        driver.SetAvailability(true);
+
+        driver.CanReceiveRides.Should().BeFalse();
+    }
 }

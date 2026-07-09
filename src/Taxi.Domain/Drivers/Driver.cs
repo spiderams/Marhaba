@@ -22,6 +22,13 @@ public sealed class Driver : Entity
     public double? LastLatitude => LastLocation?.Y;
     public double? LastLongitude => LastLocation?.X;
 
+    /// <summary>
+    /// Garde métier d'éligibilité au dispatch : un chauffeur ne peut recevoir de courses que s'il est
+    /// à la fois approuvé par un administrateur (<see cref="DriverStatus.Approved"/>) et disponible.
+    /// Source de vérité unique pour cette règle, afin qu'elle ne soit pas dupliquée dans le dispatch ou ailleurs.
+    /// </summary>
+    public bool CanReceiveRides => Status == DriverStatus.Approved && IsAvailable;
+
     private Driver() { } // EF
 
     /// <summary>
