@@ -4,6 +4,7 @@ using Taxi.Application;
 using Taxi.Infrastructure;
 using Taxi.Infrastructure.Identity;
 using Taxi.Infrastructure.Persistence;
+using Taxi.Infrastructure.Push;
 using Taxi.Web.Api.Endpoints;
 using Taxi.Web.Api.Middleware;
 using Taxi.Web.Api.OpenApi;
@@ -27,6 +28,7 @@ builder.AddNpgsqlDbContext<AppDbContext>(
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+builder.Services.AddPushInfrastructure(builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddEndpoints();
 builder.Services.AddSignalR();
