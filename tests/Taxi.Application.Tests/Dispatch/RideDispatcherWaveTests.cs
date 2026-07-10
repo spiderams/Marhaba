@@ -82,8 +82,9 @@ public class RideDispatcherWaveTests
     }
 
     [Fact]
-    public async Task Aucun_candidat_libre_notifie_les_admins()
+    public async Task Aucun_candidat_libre_sans_vague_prealable_notifie_les_admins()
     {
+        // WaveCount == 0 : aucune vague n'a encore eu lieu → on garde le flux manuel (admins), course récupérable.
         var ride = PendingRideWithGps(1);
         ride.MarkDriverTried(1);
         var (locator, rides, notifier) = Mocks(ride, [Driver(1)]);
@@ -93,5 +94,35 @@ public class RideDispatcherWaveTests
 
         ride.Status.Should().Be(RideStatus.Pending);
         notifier.Verify(n => n.NewPendingRideAsync(1, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Plus_aucun_candidat_apres_une_vague_abandonne_la_course()
+    {
+        // WaveCount > 0 : une vague a déjà eu lieu et il ne reste plus de candidat non essayé → abandon propre.
+        var ride = PendingRideWithGps(1);
+        ride.OfferWave([1], DateTime.UtcNow.AddSeconds(15)); // WaveCount = 1, driver 1 essayé
+        ride.ReturnToPending();                              // retour Pending (comme à l'expiration)
+        var (locator, rides, notifier) = Mocks(ride, [Driver(1)]); // seul candidat déjà essayé
+        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+
+        await sut.DispatchAsync(1, CancellationToken.None);
+
+        ride.Status.Should().Be(RideStatus.NoDriverFound);
+    }
+
+    [Fact]
+    public async Task Abandon_notifie_le_client_du_changement_de_statut()
+    {
+        var ride = PendingRideWithGps(1);
+        ride.OfferWave([1], DateTime.UtcNow.AddSeconds(15));
+        ride.ReturnToPending();
+        var (locator, rides, notifier) = Mocks(ride, [Driver(1)]);
+        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+
+        await sut.DispatchAsync(1, CancellationToken.None);
+
+        notifier.Verify(n => n.RideStatusChangedAsync(
+            1, "client-1", null, nameof(RideStatus.NoDriverFound), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
