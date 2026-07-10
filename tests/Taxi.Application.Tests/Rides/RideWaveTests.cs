@@ -28,6 +28,40 @@ public class RideWaveTests
     }
 
     [Fact]
+    public void Un_ride_neuf_a_zero_vague_et_plafond_non_atteint()
+    {
+        var ride = NewPendingRide();
+
+        ride.WaveCount.Should().Be(0);
+        ride.MaxWavesReached.Should().BeFalse();
+    }
+
+    [Fact]
+    public void OfferWave_incremente_le_compteur_de_vagues()
+    {
+        var ride = NewPendingRide();
+
+        ride.OfferWave([10], DateTime.UtcNow.AddSeconds(15));
+
+        ride.WaveCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void MaxWavesReached_est_vrai_apres_MaxWaves_vagues()
+    {
+        var ride = NewPendingRide();
+
+        for (var i = 0; i < Ride.MaxWaves; i++)
+        {
+            ride.OfferWave([10 + i], DateTime.UtcNow.AddSeconds(15));
+            ride.ReturnToPending(); // simule l'expiration de la vague (OfferTimeoutService)
+        }
+
+        ride.WaveCount.Should().Be(Ride.MaxWaves);
+        ride.MaxWavesReached.Should().BeTrue();
+    }
+
+    [Fact]
     public void OfferWave_echoue_si_pas_pending()
     {
         var ride = NewPendingRide();

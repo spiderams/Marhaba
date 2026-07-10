@@ -32,6 +32,23 @@ public sealed class Ride : Entity
     public DateTime? OfferExpiresAt { get; private set; }
     public List<int> TriedDriverIds { get; private set; } = [];
 
+    /// <summary>
+    /// Nombre maximal de vagues de dispatch tentées avant d'abandonner la recherche d'un chauffeur.
+    /// Au-delà, la course est considérée comme sans chauffeur disponible.
+    /// </summary>
+    public const int MaxWaves = 3;
+
+    /// <summary>
+    /// Nombre de vagues de dispatch déjà émises pour cette course, incrémenté à chaque appel d'<see cref="OfferWave"/>.
+    /// </summary>
+    public int WaveCount { get; private set; }
+
+    /// <summary>
+    /// Indique que le plafond de vagues (<see cref="MaxWaves"/>) est atteint : plus aucune nouvelle vague
+    /// ne doit être tentée et la course peut être abandonnée proprement.
+    /// </summary>
+    public bool MaxWavesReached => WaveCount >= MaxWaves;
+
     private Ride() { } // EF
 
     /// <summary>
@@ -161,6 +178,7 @@ public sealed class Ride : Entity
 
         Status = RideStatus.Offered;
         OfferExpiresAt = expiresAt;
+        WaveCount++;
         return Result.Success();
     }
 
