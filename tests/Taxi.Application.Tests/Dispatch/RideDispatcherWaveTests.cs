@@ -125,4 +125,29 @@ public class RideDispatcherWaveTests
         notifier.Verify(n => n.RideStatusChangedAsync(
             1, "client-1", null, nameof(RideStatus.NoDriverFound), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Re_dispatch_une_course_deja_abandonnee_ne_fait_rien()
+    {
+        // Garantie anti-boucle infinie : une course terminale (NoDriverFound) ne doit plus être
+        // ni offerte ni re-notifiée si le dispatcher est rappelé (ex. par OfferTimeoutService).
+        var ride = PendingRideWithGps(1);
+        ride.MarkNoDriverFound(); // état terminal
+        var (locator, rides, notifier) = Mocks(ride, [Driver(1), Driver(2), Driver(3)]);
+        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+
+        await sut.DispatchAsync(1, CancellationToken.None);
+
+        ride.Status.Should().Be(RideStatus.NoDriverFound);
+        ride.OfferedDriverIds.Should().BeEmpty();
+        locator.Verify(l => l.FindNearestAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        notifier.Verify(n => n.RideOfferedAsync(
+            It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        notifier.Verify(n => n.RideStatusChangedAsync(
+            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 }
