@@ -150,4 +150,28 @@ public class RideWaveTests
         ride.Status.Should().Be(RideStatus.Pending);
         ride.OfferedDriverIds.Should().BeEmpty();
     }
+
+    [Fact]
+    public void MarkNoDriverFound_passe_en_NoDriverFound_depuis_pending()
+    {
+        var ride = NewPendingRide();
+
+        var result = ride.MarkNoDriverFound();
+
+        result.IsSuccess.Should().BeTrue();
+        ride.Status.Should().Be(RideStatus.NoDriverFound);
+    }
+
+    [Fact]
+    public void MarkNoDriverFound_echoue_si_pas_pending()
+    {
+        var ride = NewPendingRide();
+        ride.OfferWave([10], DateTime.UtcNow.AddSeconds(15)); // passe en Offered
+
+        var result = ride.MarkNoDriverFound();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(RideErrors.NotPending);
+        ride.Status.Should().Be(RideStatus.Offered);
+    }
 }
