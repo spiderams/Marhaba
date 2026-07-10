@@ -240,6 +240,21 @@ public sealed class Ride : Entity
     }
 
     /// <summary>
+    /// Abandonne proprement la course lorsqu'aucun chauffeur n'a pu être trouvé après épuisement des vagues :
+    /// fait passer la course de <see cref="RideStatus.Pending"/> vers l'état terminal <see cref="RideStatus.NoDriverFound"/>.
+    /// La décision d'abandonner (plafond de vagues atteint) revient à l'orchestrateur de dispatch ;
+    /// l'agrégat garantit seulement que la course est bien en attente au moment de l'abandon.
+    /// </summary>
+    public Result MarkNoDriverFound()
+    {
+        if (Status != RideStatus.Pending)
+            return Result.Failure(RideErrors.NotPending);
+
+        Status = RideStatus.NoDriverFound;
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Enregistre qu'un chauffeur a déjà été sollicité pour cette course,
     /// afin d'éviter de lui reproposer la même offre lors des itérations suivantes.
     /// </summary>
