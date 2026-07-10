@@ -55,6 +55,19 @@ internal sealed partial class RideDispatcher(
 
         if (wave.Count == 0)
         {
+            // Plus aucun chauffeur non essayé à proximité. Si des vagues ont déjà été tentées
+            // (WaveCount > 0), on abandonne proprement la course et on informe le client ;
+            // sinon (aucun chauffeur dès la demande), on la laisse au flux manuel des admins.
+            if (ride.WaveCount > 0)
+            {
+                ride.MarkNoDriverFound();
+                await rides.UpdateAsync(ride, cancellationToken);
+                await notifier.RideStatusChangedAsync(
+                    ride.Id, ride.ClientId, ride.DriverId, ride.Status.ToString(), cancellationToken);
+                LogNoDriverFound(logger, ride.Id, ride.WaveCount);
+                return;
+            }
+
             LogNoCandidate(logger, ride.Id);
             await notifier.NewPendingRideAsync(ride.Id, cancellationToken);
             return;
@@ -90,6 +103,10 @@ internal sealed partial class RideDispatcher(
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "Aucun chauffeur disponible pour la course {RideId} → retour en attente (flux manuel)")]
     private static partial void LogNoCandidate(ILogger logger, int rideId);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Course {RideId} abandonnée après {WaveCount} vague(s) sans chauffeur → NoDriverFound, client notifié")]
+    private static partial void LogNoDriverFound(ILogger logger, int rideId, int waveCount);
 
     [LoggerMessage(Level = LogLevel.Debug,
         Message = "Conflit de concurrence lors de la persistance de la vague pour la course {RideId} — un autre acteur a déjà fait avancer la course, abandon silencieux")]
