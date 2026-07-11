@@ -204,4 +204,26 @@ public class RideDispatcherWaveTests
         notifier.Verify(n => n.RideOfferedAsync("user-1", 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
         push.Verify(p => p.SendOfferAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Un_echec_du_volet_push_ne_casse_pas_la_notification_signalr_de_la_vague()
+    {
+        // Best-effort : si la résolution du DeviceToken échoue pour un chauffeur, la vague entière doit
+        // quand même recevoir son offre SignalR — l'incident push ne casse pas le flux de dispatch.
+        var ride = PendingRideWithGps(1);
+        var (locator, rides, notifier) = Mocks(ride, [Driver(1), Driver(2)]);
+        var push = new Mock<IPushNotifier>();
+        var tokens = new Mock<IDeviceTokenReader>();
+        tokens.Setup(t => t.GetDeviceTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+              .ThrowsAsync(new InvalidOperationException("base indisponible"));
+        var sut = new RideDispatcher(
+            locator.Object, rides.Object, notifier.Object, push.Object, tokens.Object,
+            NullLogger<RideDispatcher>.Instance);
+
+        Func<Task> act = () => sut.DispatchAsync(1, CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
+        notifier.Verify(n => n.RideOfferedAsync("user-1", 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+        notifier.Verify(n => n.RideOfferedAsync("user-2", 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
