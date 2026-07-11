@@ -91,15 +91,23 @@ internal sealed partial class RideDispatcher(
         }
 
         // Double canal : SignalR pour la fluidité si l'app est ouverte, push FCM pour réveiller
-        // un chauffeur app fermée. Le push n'est tenté que si un jeton d'appareil est connu ;
-        // il est best-effort (FcmPushNotifier n'échoue jamais bruyamment).
+        // un chauffeur app fermée. Le volet push (résolution du jeton + envoi) est best-effort et isolé
+        // dans un try/catch : toute panne (base indisponible, FCM en erreur) est journalisée mais
+        // n'interrompt jamais la notification SignalR ni le reste de la vague.
         foreach (var candidate in wave)
         {
             await notifier.RideOfferedAsync(candidate.UserId, ride.Id, expiresAt, cancellationToken);
 
-            var deviceToken = await deviceTokens.GetDeviceTokenAsync(candidate.UserId, cancellationToken);
-            if (deviceToken is not null)
-                await pushNotifier.SendOfferAsync(deviceToken, ride.Id, expiresAt, cancellationToken);
+            try
+            {
+                var deviceToken = await deviceTokens.GetDeviceTokenAsync(candidate.UserId, cancellationToken);
+                if (deviceToken is not null)
+                    await pushNotifier.SendOfferAsync(deviceToken, ride.Id, expiresAt, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                LogPushDispatchFailed(logger, ex, ride.Id, candidate.UserId);
+            }
         }
 
         LogWaveOffered(logger, ride.Id, wave.Count, expiresAt);
@@ -118,6 +126,10 @@ internal sealed partial class RideDispatcher(
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "Course {RideId} abandonnée après {WaveCount} vague(s) sans chauffeur → NoDriverFound, client notifié")]
     private static partial void LogNoDriverFound(ILogger logger, int rideId, int waveCount);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Échec du volet push pour la course {RideId} / chauffeur {UserId} (best-effort, SignalR non affecté)")]
+    private static partial void LogPushDispatchFailed(ILogger logger, Exception ex, int rideId, string userId);
 
     [LoggerMessage(Level = LogLevel.Debug,
         Message = "Conflit de concurrence lors de la persistance de la vague pour la course {RideId} — un autre acteur a déjà fait avancer la course, abandon silencieux")]
