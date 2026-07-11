@@ -18,6 +18,8 @@ internal sealed partial class RideDispatcher(
     IDriverLocator locator,
     IRepository<Ride> rides,
     IRealtimeNotifier notifier,
+    IPushNotifier pushNotifier,
+    IDeviceTokenReader deviceTokens,
     ILogger<RideDispatcher> logger)
     : IRideDispatcher
 {
@@ -88,8 +90,17 @@ internal sealed partial class RideDispatcher(
             return;
         }
 
+        // Double canal : SignalR pour la fluidité si l'app est ouverte, push FCM pour réveiller
+        // un chauffeur app fermée. Le push n'est tenté que si un jeton d'appareil est connu ;
+        // il est best-effort (FcmPushNotifier n'échoue jamais bruyamment).
         foreach (var candidate in wave)
+        {
             await notifier.RideOfferedAsync(candidate.UserId, ride.Id, expiresAt, cancellationToken);
+
+            var deviceToken = await deviceTokens.GetDeviceTokenAsync(candidate.UserId, cancellationToken);
+            if (deviceToken is not null)
+                await pushNotifier.SendOfferAsync(deviceToken, ride.Id, expiresAt, cancellationToken);
+        }
 
         LogWaveOffered(logger, ride.Id, wave.Count, expiresAt);
     }

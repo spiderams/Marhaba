@@ -19,9 +19,12 @@ public class RideDispatcherTests
     private readonly Mock<IDriverLocator> _locator = new();
     private readonly Mock<IRepository<Ride>> _rides = new();
     private readonly Mock<IRealtimeNotifier> _notifier = new();
+    private readonly Mock<IPushNotifier> _push = new();
+    private readonly Mock<IDeviceTokenReader> _deviceTokens = new();
 
     private RideDispatcher Dispatcher() => new(
         _locator.Object, _rides.Object, _notifier.Object,
+        _push.Object, _deviceTokens.Object,
         NullLogger<RideDispatcher>.Instance);
 
     private static Ride PendingRideWithCoords()

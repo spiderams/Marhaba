@@ -41,12 +41,26 @@ public class RideDispatcherWaveTests
         return (locator, rides, notifier);
     }
 
+    /// <summary>
+    /// Construit un RideDispatcher avec des mocks push par défaut (aucun DeviceToken), pour les tests
+    /// qui ne s'intéressent pas au canal push.
+    /// </summary>
+    private static RideDispatcher CreateSut(
+        Mock<IDriverLocator> locator, Mock<IRepository<Ride>> rides, Mock<IRealtimeNotifier> notifier)
+    {
+        var push = new Mock<IPushNotifier>();
+        var tokens = new Mock<IDeviceTokenReader>();
+        return new RideDispatcher(
+            locator.Object, rides.Object, notifier.Object, push.Object, tokens.Object,
+            NullLogger<RideDispatcher>.Instance);
+    }
+
     [Fact]
     public async Task Offre_a_min_3_candidats()
     {
         var ride = PendingRideWithGps(1);
         var (locator, rides, notifier) = Mocks(ride, [Driver(1), Driver(2), Driver(3), Driver(4), Driver(5)]);
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -60,7 +74,7 @@ public class RideDispatcherWaveTests
     {
         var ride = PendingRideWithGps(1);
         var (locator, rides, notifier) = Mocks(ride, [Driver(1), Driver(2)]);
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -74,7 +88,7 @@ public class RideDispatcherWaveTests
         ride.MarkDriverTried(1);
         ride.MarkDriverTried(2);
         var (locator, rides, notifier) = Mocks(ride, [Driver(1), Driver(2), Driver(3), Driver(4)]);
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -88,7 +102,7 @@ public class RideDispatcherWaveTests
         var ride = PendingRideWithGps(1);
         ride.MarkDriverTried(1);
         var (locator, rides, notifier) = Mocks(ride, [Driver(1)]);
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -104,7 +118,7 @@ public class RideDispatcherWaveTests
         ride.OfferWave([1], DateTime.UtcNow.AddSeconds(15)); // WaveCount = 1, driver 1 essayé
         ride.ReturnToPending();                              // retour Pending (comme à l'expiration)
         var (locator, rides, notifier) = Mocks(ride, [Driver(1)]); // seul candidat déjà essayé
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -118,7 +132,7 @@ public class RideDispatcherWaveTests
         ride.OfferWave([1], DateTime.UtcNow.AddSeconds(15));
         ride.ReturnToPending();
         var (locator, rides, notifier) = Mocks(ride, [Driver(1)]);
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -134,7 +148,7 @@ public class RideDispatcherWaveTests
         var ride = PendingRideWithGps(1);
         ride.MarkNoDriverFound(); // état terminal
         var (locator, rides, notifier) = Mocks(ride, [Driver(1), Driver(2), Driver(3)]);
-        var sut = new RideDispatcher(locator.Object, rides.Object, notifier.Object, NullLogger<RideDispatcher>.Instance);
+        var sut = CreateSut(locator, rides, notifier);
 
         await sut.DispatchAsync(1, CancellationToken.None);
 
@@ -149,5 +163,45 @@ public class RideDispatcherWaveTests
         notifier.Verify(n => n.RideStatusChangedAsync(
             It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Offre_envoie_aussi_un_push_au_chauffeur_ayant_un_device_token()
+    {
+        var ride = PendingRideWithGps(1);
+        var (locator, rides, notifier) = Mocks(ride, [Driver(1)]);
+        var push = new Mock<IPushNotifier>();
+        var tokens = new Mock<IDeviceTokenReader>();
+        tokens.Setup(t => t.GetDeviceTokenAsync("user-1", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("device-token-1");
+        var sut = new RideDispatcher(
+            locator.Object, rides.Object, notifier.Object, push.Object, tokens.Object,
+            NullLogger<RideDispatcher>.Instance);
+
+        await sut.DispatchAsync(1, CancellationToken.None);
+
+        // Double canal : SignalR ET push pour un chauffeur joignable hors-app.
+        notifier.Verify(n => n.RideOfferedAsync("user-1", 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+        push.Verify(p => p.SendOfferAsync("device-token-1", 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Offre_n_envoie_pas_de_push_si_le_chauffeur_n_a_pas_de_device_token()
+    {
+        var ride = PendingRideWithGps(1);
+        var (locator, rides, notifier) = Mocks(ride, [Driver(1)]);
+        var push = new Mock<IPushNotifier>();
+        var tokens = new Mock<IDeviceTokenReader>();
+        tokens.Setup(t => t.GetDeviceTokenAsync("user-1", It.IsAny<CancellationToken>()))
+              .ReturnsAsync((string?)null); // aucun appareil enregistré
+        var sut = new RideDispatcher(
+            locator.Object, rides.Object, notifier.Object, push.Object, tokens.Object,
+            NullLogger<RideDispatcher>.Instance);
+
+        await sut.DispatchAsync(1, CancellationToken.None);
+
+        // SignalR est toujours envoyé, mais le push est sauté faute de jeton.
+        notifier.Verify(n => n.RideOfferedAsync("user-1", 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+        push.Verify(p => p.SendOfferAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
