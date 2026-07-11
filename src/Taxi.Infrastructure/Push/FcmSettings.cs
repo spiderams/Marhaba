@@ -13,4 +13,10 @@ internal sealed class FcmSettings
 
     /// <summary>Adresse de base de l'API FCM. Surchargée en test pour cibler un serveur factice.</summary>
     public string BaseUrl { get; init; } = "https://fcm.googleapis.com";
+
+    /// <summary>
+    /// Chemin, hors dépôt, vers le fichier JSON du compte de service Google utilisé pour signer les jetons FCM.
+    /// Vide en l'absence de credentials : le fournisseur de jeton retombe alors sur le stub non configuré.
+    /// </summary>
+    public string CredentialsPath { get; init; } = string.Empty;
 }
