@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Taxi.Application.Administration;
 using Taxi.Application.Identity.Abstractions;
+using Taxi.Application.Realtime;
 using Taxi.Domain.Identity;
 using Taxi.Infrastructure.Persistence;
 
@@ -71,6 +72,7 @@ public static class DependencyInjection
 
         services.AddHostedService<RefreshTokenCleanupService>();
         services.AddScoped<IUserDirectory, UserDirectory>();
+        services.AddScoped<IDeviceTokenReader, DeviceTokenReader>();
 
         return services;
     }
