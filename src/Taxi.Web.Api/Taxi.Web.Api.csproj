@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\Taxi.Infrastructure\Taxi.Infrastructure.csproj" />
@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <UserSecretsId>507cb4c4-ae7b-44db-a704-1ba64627dfa4</UserSecretsId>
   </PropertyGroup>
 
 </Project>

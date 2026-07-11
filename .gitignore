@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Credentials FCM / comptes de service Google (ne JAMAIS committer)
+*firebase-adminsdk*.json
+*service-account*.json
+fcm-service-account.json

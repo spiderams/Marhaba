@@ -21,8 +21,13 @@ public static class DependencyInjection
         services.AddRefitClient<IFcmApi>()
             .ConfigureHttpClient(http => http.BaseAddress = new Uri(settings.BaseUrl));
 
-        // Fournisseur de jeton FCM : non encore raccordé au compte de service Google (voir NotConfiguredFcmTokenProvider).
-        services.AddSingleton<IFcmTokenProvider, NotConfiguredFcmTokenProvider>();
+        // Fournisseur de jeton FCM : compte de service Google si des credentials sont configurés,
+        // sinon repli sur le stub non configuré (le projet démarre en local sans clé, le push est alors inopérant).
+        if (!string.IsNullOrWhiteSpace(settings.CredentialsPath))
+            services.AddSingleton<IFcmTokenProvider, GoogleFcmTokenProvider>();
+        else
+            services.AddSingleton<IFcmTokenProvider, NotConfiguredFcmTokenProvider>();
+
         services.AddScoped<IPushNotifier, FcmPushNotifier>();
 
         return services;
