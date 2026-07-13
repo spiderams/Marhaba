@@ -2,6 +2,7 @@ using Taxi.Application.Administration;
 using Taxi.Application.Administration.Listing;
 using Taxi.Application.Administration.Stats;
 using Taxi.Application.Drivers;
+using Taxi.Application.Pricing.Admin;
 using Taxi.Application.Rides;
 using Taxi.Domain.Identity;
 using Taxi.SharedKernel.Messaging;
@@ -44,5 +45,35 @@ public sealed class AdminEndpoints : IEndpoint
             IQueryHandler<GetReportsQuery, IReadOnlyList<ReportDto>> handler, CancellationToken ct) =>
                 (await handler.Handle(new GetReportsQuery(), ct)).ToHttpResult())
             .WithName("AdminReports").WithSummary("Liste des signalements");
+
+        // --- Tarifs par zone (CRUD réservé à l'admin) ---
+
+        group.MapGet("/zone-prices", async (
+            IQueryHandler<GetZonePricesQuery, IReadOnlyList<ZonePriceDto>> handler, CancellationToken ct) =>
+                (await handler.Handle(new GetZonePricesQuery(), ct)).ToHttpResult())
+            .WithName("AdminZonePrices").WithSummary("Liste des tarifs par zone");
+
+        group.MapPost("/zone-prices", async (
+            CreateZonePriceCommand command,
+            ICommandHandler<CreateZonePriceCommand, ZonePriceDto> handler, CancellationToken ct) =>
+                (await handler.Handle(command, ct)).ToHttpResult())
+            .WithName("AdminCreateZonePrice").WithSummary("Créer un tarif de zone");
+
+        group.MapPut("/zone-prices/{id}", async (
+            int id, UpdateZonePriceRequest body,
+            ICommandHandler<UpdateZonePriceCommand, ZonePriceDto> handler, CancellationToken ct) =>
+                (await handler.Handle(new UpdateZonePriceCommand(id, body.Price), ct)).ToHttpResult())
+            .WithName("AdminUpdateZonePrice").WithSummary("Modifier un tarif de zone");
+
+        group.MapDelete("/zone-prices/{id}", async (
+            int id,
+            ICommandHandler<DeleteZonePriceCommand, bool> handler, CancellationToken ct) =>
+                (await handler.Handle(new DeleteZonePriceCommand(id), ct)).ToHttpResult())
+            .WithName("AdminDeleteZonePrice").WithSummary("Supprimer un tarif de zone");
     }
 }
+
+/// <summary>
+/// Corps de la requête de mise à jour d'un tarif de zone : nouveau montant.
+/// </summary>
+public sealed record UpdateZonePriceRequest(decimal Price);
