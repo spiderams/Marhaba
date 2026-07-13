@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Taxi.Application.Rides;
 using Taxi.Application.Rides.Transitions;
 using Taxi.Domain.Identity;
+using Taxi.Domain.Rides;
 using Taxi.SharedKernel.Messaging;
 using Taxi.Web.Api.Endpoints;
 
@@ -39,12 +40,14 @@ public sealed class RideTransitionEndpoints : IEndpoint
         {
             var userId = principal.GetUserId();
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
-            return (await handler.Handle(new CompleteRideCommand(id, userId, body.FinalPrice), ct)).ToHttpResult();
+            return (await handler.Handle(
+                new CompleteRideCommand(id, userId, body.FinalPrice, body.PaymentMethod), ct)).ToHttpResult();
         }).WithName("RideComplete").WithSummary("Terminer la course");
     }
 }
 
 /// <summary>
-/// Corps de la requête de complétion : montant réellement dû, saisi par le chauffeur en fin de course.
+/// Corps de la requête de complétion : montant réellement dû et mode de paiement, saisis par le chauffeur
+/// en fin de course. Le mode de paiement vaut <see cref="PaymentMethod.Cash"/> par défaut (cash au lancement).
 /// </summary>
-public sealed record CompleteRideRequest(decimal FinalPrice);
+public sealed record CompleteRideRequest(decimal FinalPrice, PaymentMethod PaymentMethod = PaymentMethod.Cash);

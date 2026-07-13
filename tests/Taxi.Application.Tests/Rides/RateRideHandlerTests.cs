@@ -21,7 +21,7 @@ public class RateRideHandlerTests
     private static Ride CompletedRideOwnedBy(string clientId, int driverId)
     {
         var r = Ride.Request(clientId, "A", "B", "Z1", "Z2", null, null, null, null, 1000m);
-        r.Accept(driverId); r.MarkArrived(); r.Start(); r.Complete(1000m);
+        r.Accept(driverId); r.MarkArrived(); r.Start(); r.Complete(1000m, PaymentMethod.Cash);
         return r;
     }
 
