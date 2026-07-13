@@ -52,4 +52,13 @@ public sealed class PostgisContainerFixture : IAsyncLifetime
         await using var db = CreateContext();
         await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE drivers RESTART IDENTITY CASCADE;");
     }
+
+    /// <summary>
+    /// Vide la table des courses pour isoler chaque test qui manipule des courses.
+    /// </summary>
+    public async Task ResetRidesAsync()
+    {
+        await using var db = CreateContext();
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE rides RESTART IDENTITY CASCADE;");
+    }
 }

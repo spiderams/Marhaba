@@ -20,6 +20,9 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>Taxi.Application.Tests</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Taxi.IntegrationTests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>
