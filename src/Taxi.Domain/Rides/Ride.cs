@@ -26,6 +26,11 @@ public sealed class Ride : Entity
     /// la course n'est pas terminée. Sert de référence pour la facturation et les statistiques de chiffre d'affaires.
     /// </summary>
     public decimal? FinalPrice { get; private set; }
+
+    /// <summary>
+    /// Mode de paiement figé à la complétion de la course. <c>null</c> tant que la course n'est pas terminée.
+    /// </summary>
+    public PaymentMethod? PaymentMethod { get; private set; }
     public RideStatus Status { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
@@ -126,16 +131,17 @@ public sealed class Ride : Entity
 
     /// <summary>
     /// Clôture la course à l'arrivée à destination : fait passer la course de <see cref="RideStatus.InProgress"/>
-    /// à <see cref="RideStatus.Completed"/>, fige le montant réellement dû (<paramref name="finalPrice"/>)
-    /// et enregistre l'heure de fin.
+    /// à <see cref="RideStatus.Completed"/>, fige le montant réellement dû (<paramref name="finalPrice"/>) et le
+    /// mode de paiement (<paramref name="paymentMethod"/>), et enregistre l'heure de fin.
     /// </summary>
-    public Result Complete(decimal finalPrice)
+    public Result Complete(decimal finalPrice, PaymentMethod paymentMethod)
     {
         if (Status != RideStatus.InProgress)
             return Result.Failure(RideErrors.InvalidTransition);
 
         Status = RideStatus.Completed;
         FinalPrice = finalPrice;
+        PaymentMethod = paymentMethod;
         CompletedAt = DateTime.UtcNow;
         return Result.Success();
     }

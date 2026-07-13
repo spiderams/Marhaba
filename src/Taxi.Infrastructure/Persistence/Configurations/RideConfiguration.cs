@@ -20,6 +20,7 @@ internal sealed class RideConfiguration : IEntityTypeConfiguration<Ride>
         builder.Property(r => r.DestinationZone).HasMaxLength(100);
         builder.Property(r => r.EstimatedPrice).HasColumnType("numeric(10,2)");
         builder.Property(r => r.FinalPrice).HasColumnType("numeric(10,2)");
+        builder.Property(r => r.PaymentMethod).HasConversion<string>().HasMaxLength(20);
         builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
         builder.HasIndex(r => r.ClientId);
         builder.HasIndex(r => r.DriverId);
