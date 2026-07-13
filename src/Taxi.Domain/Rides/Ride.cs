@@ -34,6 +34,15 @@ public sealed class Ride : Entity
     public RideStatus Status { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
+
+    /// <summary>Partie ayant annulé la course. <c>null</c> si la course n'a pas été annulée.</summary>
+    public CancelledBy? CancelledBy { get; private set; }
+
+    /// <summary>Motif d'annulation figé au moment de l'annulation. <c>null</c> si la course n'a pas été annulée.</summary>
+    public CancellationReason? CancellationReason { get; private set; }
+
+    /// <summary>Précision facultative en texte libre accompagnant le motif d'annulation.</summary>
+    public string? CancellationNote { get; private set; }
     private readonly List<int> _offeredDriverIds = [];
 
     /// <summary>
@@ -148,28 +157,41 @@ public sealed class Ride : Entity
 
     /// <summary>
     /// Annulation initiée par le client : autorisée uniquement si la course est encore
-    /// en attente, offerte, acceptée ou si le chauffeur vient d'arriver.
+    /// en attente, offerte, acceptée ou si le chauffeur vient d'arriver. Capture le motif
+    /// (<paramref name="reason"/>) et une précision facultative (<paramref name="note"/>) pour l'arbitrage.
     /// </summary>
-    public Result CancelByClient()
+    public Result CancelByClient(CancellationReason reason, string? note = null)
     {
         if (Status is not (RideStatus.Pending or RideStatus.Offered or RideStatus.Accepted or RideStatus.DriverArrived))
             return Result.Failure(RideErrors.CannotCancel);
 
-        Status = RideStatus.Cancelled;
+        Cancel(Rides.CancelledBy.Client, reason, note);
         return Result.Success();
     }
 
     /// <summary>
     /// Annulation initiée par le chauffeur : uniquement possible si la course est acceptée
     /// ou si le chauffeur est déjà arrivé sur place. La course retourne au pool pour être réattribuée.
+    /// Capture le motif (<paramref name="reason"/>) et une précision facultative (<paramref name="note"/>).
     /// </summary>
-    public Result CancelByDriver()
+    public Result CancelByDriver(CancellationReason reason, string? note = null)
     {
         if (Status is not (RideStatus.Accepted or RideStatus.DriverArrived))
             return Result.Failure(RideErrors.CannotCancel);
 
-        Status = RideStatus.Cancelled;
+        Cancel(Rides.CancelledBy.Driver, reason, note);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Applique l'annulation : passe au statut <see cref="RideStatus.Cancelled"/> et fige qui annule et pourquoi.
+    /// </summary>
+    private void Cancel(CancelledBy by, CancellationReason reason, string? note)
+    {
+        Status = RideStatus.Cancelled;
+        CancelledBy = by;
+        CancellationReason = reason;
+        CancellationNote = note;
     }
 
     /// <summary>

@@ -38,13 +38,13 @@ internal sealed class CancelRideCommandHandler(
                 return Result.Failure<RideDto>(RideErrors.NoDriverProfile);
             if (ride.DriverId != driver.Id)
                 return Result.Failure<RideDto>(RideErrors.NotAssignedDriver);
-            outcome = ride.CancelByDriver();
+            outcome = ride.CancelByDriver(command.Reason, command.Note);
         }
         else
         {
             if (ride.ClientId != command.UserId)
                 return Result.Failure<RideDto>(RideErrors.NotAssignedDriver);
-            outcome = ride.CancelByClient();
+            outcome = ride.CancelByClient(command.Reason, command.Note);
         }
 
         if (outcome.IsFailure)
