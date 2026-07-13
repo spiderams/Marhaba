@@ -22,4 +22,9 @@ public sealed class ZonePrice : Entity
     /// </summary>
     public static ZonePrice Create(string fromZone, string toZone, decimal price)
         => new() { FromZone = fromZone, ToZone = toZone, Price = price };
+
+    /// <summary>
+    /// Met à jour le montant du tarif entre les deux zones (les zones elles-mêmes ne changent pas).
+    /// </summary>
+    public void UpdatePrice(decimal price) => Price = price;
 }
