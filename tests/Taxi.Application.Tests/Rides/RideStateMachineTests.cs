@@ -86,20 +86,47 @@ public class RideStateMachineTests
         var ride = NewPendingRide();
         ride.Accept(7);
         ride.MarkArrived();
-        ride.CancelByClient().IsSuccess.Should().BeTrue();
+        ride.CancelByClient(CancellationReason.ChangedMind).IsSuccess.Should().BeTrue();
         ride.Status.Should().Be(RideStatus.Cancelled);
 
         var inProgress = NewPendingRide();
         inProgress.Accept(7); inProgress.MarkArrived(); inProgress.Start();
-        inProgress.CancelByClient().IsFailure.Should().BeTrue();
+        inProgress.CancelByClient(CancellationReason.ChangedMind).IsFailure.Should().BeTrue();
     }
 
     [Fact]
     public void Driver_cannot_cancel_a_pending_ride()
     {
         var ride = NewPendingRide();
-        var result = ride.CancelByDriver();
+        var result = ride.CancelByDriver(CancellationReason.DriverNoShow);
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(RideErrors.CannotCancel);
+    }
+
+    [Fact]
+    public void CancelByClient_captures_reason_note_and_who_cancelled()
+    {
+        var ride = NewPendingRide();
+        ride.Accept(7);
+
+        var result = ride.CancelByClient(CancellationReason.TooLongWait, "attente de 20 minutes");
+
+        result.IsSuccess.Should().BeTrue();
+        ride.CancellationReason.Should().Be(CancellationReason.TooLongWait);
+        ride.CancellationNote.Should().Be("attente de 20 minutes");
+        ride.CancelledBy.Should().Be(CancelledBy.Client);
+    }
+
+    [Fact]
+    public void CancelByDriver_captures_reason_and_who_cancelled()
+    {
+        var ride = NewPendingRide();
+        ride.Accept(7);
+
+        var result = ride.CancelByDriver(CancellationReason.ClientNoShow);
+
+        result.IsSuccess.Should().BeTrue();
+        ride.CancellationReason.Should().Be(CancellationReason.ClientNoShow);
+        ride.CancelledBy.Should().Be(CancelledBy.Driver);
     }
 }

@@ -24,7 +24,8 @@ public class CancelRideHandlerTests
         _rides.Setup(r => r.FirstOrDefaultAsync(It.IsAny<ISpecification<Ride>>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(Ride.Request("client-1", "A", "B", "Z1", "Z2", null, null, null, null, 1000m));
 
-        var result = await Handler().Handle(new CancelRideCommand(1, "client-1", IsDriver: false), CancellationToken.None);
+        var result = await Handler().Handle(
+            new CancelRideCommand(1, "client-1", IsDriver: false, CancellationReason.ChangedMind), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be("Cancelled");
@@ -36,7 +37,8 @@ public class CancelRideHandlerTests
         _rides.Setup(r => r.FirstOrDefaultAsync(It.IsAny<ISpecification<Ride>>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(Ride.Request("client-1", "A", "B", "Z1", "Z2", null, null, null, null, 1000m));
 
-        var result = await Handler().Handle(new CancelRideCommand(1, "intruder", IsDriver: false), CancellationToken.None);
+        var result = await Handler().Handle(
+            new CancelRideCommand(1, "intruder", IsDriver: false, CancellationReason.ChangedMind), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(RideErrors.NotAssignedDriver);
