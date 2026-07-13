@@ -4,6 +4,7 @@ using Taxi.Application.Abstractions;
 using Taxi.Application.Administration;
 using Taxi.Application.Administration.Listing;
 using Taxi.Domain.Drivers;
+using Taxi.Domain.Rides;
 using Xunit;
 
 namespace Taxi.Application.Tests.Administration;
@@ -37,5 +38,26 @@ public class AdminListingHandlersTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllRides_exposes_cancellation_reason_for_moderation()
+    {
+        // Une course annulée par le client avec un motif : le support doit voir qui a annulé et pourquoi.
+        var ride = Ride.Request("client-1", "A", "B", "Centre-ville", "Balbala", 11.58, 43.14, 11.60, 43.15, 1500m);
+        ride.CancelByClient(CancellationReason.TooLongWait, "attente de 20 minutes");
+
+        var rides = new Mock<IRepository<Ride>>();
+        rides.Setup(r => r.ListAsync(It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new List<Ride> { ride });
+        var handler = new GetAllRidesQueryHandler(rides.Object);
+
+        var result = await handler.Handle(new GetAllRidesQuery(), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value[0].CancelledBy.Should().Be("Client");
+        result.Value[0].CancellationReason.Should().Be("TooLongWait");
+        result.Value[0].CancellationNote.Should().Be("attente de 20 minutes");
     }
 }
