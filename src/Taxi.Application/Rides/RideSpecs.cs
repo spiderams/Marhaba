@@ -46,3 +46,12 @@ public sealed class ExpiredOffersSpec : Specification<Ride>
     public ExpiredOffersSpec(DateTime now)
         => Query.Where(r => r.Status == RideStatus.Offered && r.OfferExpiresAt != null && r.OfferExpiresAt <= now);
 }
+
+/// <summary>
+/// Spécification : sélectionne les courses terminées (statut <c>Completed</c>), qui portent un tarif final figé.
+/// Base des indicateurs de chiffre d'affaires.
+/// </summary>
+public sealed class CompletedRidesSpec : Specification<Ride>
+{
+    public CompletedRidesSpec() => Query.Where(r => r.Status == RideStatus.Completed);
+}
