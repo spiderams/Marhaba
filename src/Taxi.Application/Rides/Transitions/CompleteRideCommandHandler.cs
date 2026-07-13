@@ -30,7 +30,7 @@ internal sealed class CompleteRideCommandHandler(
         if (ride.DriverId != driver.Id)
             return Result.Failure<RideDto>(RideErrors.NotAssignedDriver);
 
-        var transition = ride.Complete();
+        var transition = ride.Complete(command.FinalPrice);
         if (transition.IsFailure)
             return Result.Failure<RideDto>(transition.Error);
 

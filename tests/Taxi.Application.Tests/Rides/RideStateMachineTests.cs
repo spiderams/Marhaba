@@ -29,7 +29,7 @@ public class RideStateMachineTests
         ride.Status.Should().Be(RideStatus.DriverArrived);
         ride.Start().IsSuccess.Should().BeTrue();
         ride.Status.Should().Be(RideStatus.InProgress);
-        ride.Complete().IsSuccess.Should().BeTrue();
+        ride.Complete(1500m).IsSuccess.Should().BeTrue();
         ride.Status.Should().Be(RideStatus.Completed);
         ride.CompletedAt.Should().NotBeNull();
     }
@@ -58,9 +58,25 @@ public class RideStateMachineTests
     public void Complete_should_fail_when_not_in_progress()
     {
         var ride = NewPendingRide();
-        var result = ride.Complete();
+        var result = ride.Complete(1500m);
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(RideErrors.InvalidTransition);
+    }
+
+    [Fact]
+    public void Complete_should_freeze_the_final_price()
+    {
+        var ride = NewPendingRide();
+        ride.Accept(7);
+        ride.MarkArrived();
+        ride.Start();
+
+        var result = ride.Complete(1750m);
+
+        result.IsSuccess.Should().BeTrue();
+        ride.Status.Should().Be(RideStatus.Completed);
+        ride.FinalPrice.Should().Be(1750m);
+        ride.CompletedAt.Should().NotBeNull();
     }
 
     [Fact]

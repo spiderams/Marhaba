@@ -99,7 +99,7 @@ public class UpdateDriverLocationCommandHandlerTests
         ride.Accept(0);
         ride.MarkArrived();
         ride.Start();
-        ride.Complete();
+        ride.Complete(1000m);
         _drivers.Setup(d => d.FirstOrDefaultAsync(It.IsAny<ISpecification<Driver>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(DriverProfile());
         _rides.Setup(r => r.FirstOrDefaultAsync(It.IsAny<ISpecification<Ride>>(), It.IsAny<CancellationToken>()))
