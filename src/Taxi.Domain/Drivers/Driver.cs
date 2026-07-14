@@ -14,7 +14,6 @@ public sealed class Driver : Entity
     public string VehiclePlate { get; private set; } = string.Empty;
     public string VehicleType { get; private set; } = "Taxi";
     public bool IsAvailable { get; private set; }
-    public DriverApprovalStatus ApprovalStatus { get; private set; } = DriverApprovalStatus.PendingApproval;
     public DriverStatus Status { get; private set; }
     public double AverageRating { get; private set; }
     public Point? LastLocation { get; private set; }
@@ -22,7 +21,6 @@ public sealed class Driver : Entity
 
     public double? LastLatitude => LastLocation?.Y;
     public double? LastLongitude => LastLocation?.X;
-    public bool CanReceiveRides => ApprovalStatus == DriverApprovalStatus.Approved && IsAvailable;
 
     /// <summary>
     /// Garde métier d'éligibilité au dispatch : un chauffeur ne peut recevoir de courses que s'il est
@@ -135,33 +133,5 @@ public sealed class Driver : Entity
     {
         LastLocation = new Point(longitude, latitude) { SRID = 4326 };
         LastLocationAt = DateTime.UtcNow;
-    }
-    public Result Approve()
-    {
-        if (ApprovalStatus == DriverApprovalStatus.Rejected)
-            return Result.Failure(Error.Conflict("Driver.Rejected", "Un chauffeur rejeté ne peut pas être approuvé."));
-
-        ApprovalStatus = DriverApprovalStatus.Approved;
-        return Result.Success();
-    }
-
-    public Result Suspend()
-    {
-        if (ApprovalStatus != DriverApprovalStatus.Approved)
-            return Result.Failure(Error.Conflict("Driver.NotApproved", "Seul un chauffeur approuvé peut être suspendu."));
-
-        ApprovalStatus = DriverApprovalStatus.Suspended;
-        IsAvailable = false;
-        return Result.Success();
-    }
-
-    public Result Reject()
-    {
-        if (ApprovalStatus == DriverApprovalStatus.Approved)
-            return Result.Failure(Error.Conflict("Driver.Approved", "Un chauffeur approuvé doit être suspendu plutôt que rejeté."));
-
-        ApprovalStatus = DriverApprovalStatus.Rejected;
-        IsAvailable = false;
-        return Result.Success();
     }
 }
