@@ -1,5 +1,4 @@
 using Taxi.Application.Administration;
-using Taxi.Application.Administration.Drivers;
 using Taxi.Application.Administration.Listing;
 using Taxi.Application.Administration.Stats;
 using Taxi.Application.Drivers;
@@ -46,6 +45,7 @@ public sealed class AdminEndpoints : IEndpoint
                 (await handler.Handle(new GetReportsQuery(), ct)).ToHttpResult())
             .WithName("AdminReports").WithSummary("Liste des signalements");
 
+<<<<<<< HEAD
              group.MapPost("/drivers/{driverId:int}/approve", async (
             int driverId,
             ICommandHandler<ApproveDriverCommand, DriverDto> handler,
@@ -67,6 +67,8 @@ public sealed class AdminEndpoints : IEndpoint
                 (await handler.Handle(new RejectDriverCommand(driverId), ct)).ToHttpResult())
             .WithName("AdminRejectDriver").WithSummary("Rejette un chauffeur");
 
+=======
+>>>>>>> parent of d736f13 (Merged PR 29: US — Endpoints Admin d'approbation / suspension)
         // Les tarifs par zone (CRUD Admin) sont dans Modules/Pricing/ZonePriceAdminEndpoints.
     }
 }
