@@ -12,9 +12,11 @@ public sealed record DriverDto(
     string VehiclePlate,
     string VehicleType,
     bool IsAvailable,
+    DriverApprovalStatus ApprovalStatus,
+    bool CanReceiveRides,
     double AverageRating)
 {
     public static DriverDto From(Driver driver) => new(
         driver.Id, driver.UserId, driver.LicenseNumber, driver.VehiclePlate,
-        driver.VehicleType, driver.IsAvailable, driver.AverageRating);
+        driver.VehicleType, driver.IsAvailable, driver.ApprovalStatus, driver.CanReceiveRides, driver.AverageRating);
 }

@@ -16,6 +16,8 @@ public class DriverTests
         driver.VehiclePlate.Should().Be("DJ-1234");
         driver.VehicleType.Should().Be("Taxi");
         driver.IsAvailable.Should().BeFalse();
+        driver.ApprovalStatus.Should().Be(DriverApprovalStatus.PendingApproval);
+        driver.CanReceiveRides.Should().BeFalse();
         driver.AverageRating.Should().Be(0);
         driver.Status.Should().Be(DriverStatus.PendingApproval);
     }
@@ -43,7 +45,33 @@ public class DriverTests
         driver.SetAvailability(false);
         driver.IsAvailable.Should().BeFalse();
     }
+    [Fact]
+    public void Approve_should_allow_available_driver_to_receive_rides()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.SetAvailability(true);
 
+        var result = driver.Approve();
+
+        result.IsSuccess.Should().BeTrue();
+        driver.ApprovalStatus.Should().Be(DriverApprovalStatus.Approved);
+        driver.CanReceiveRides.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Suspend_should_make_driver_unavailable_and_block_ride_reception()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.SetAvailability(true);
+        driver.Approve();
+
+        var result = driver.Suspend();
+
+        result.IsSuccess.Should().BeTrue();
+        driver.ApprovalStatus.Should().Be(DriverApprovalStatus.Suspended);
+        driver.IsAvailable.Should().BeFalse();
+        driver.CanReceiveRides.Should().BeFalse();
+    }
     [Fact]
     public void UpdateAverageRating_sets_the_average()
     {
