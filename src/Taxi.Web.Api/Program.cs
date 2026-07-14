@@ -4,6 +4,7 @@ using Taxi.Application;
 using Taxi.Infrastructure;
 using Taxi.Infrastructure.Identity;
 using Taxi.Infrastructure.Persistence;
+using Taxi.Infrastructure.Push;
 using Taxi.Web.Api.Endpoints;
 using Taxi.Web.Api.Middleware;
 using Taxi.Web.Api.OpenApi;
@@ -27,10 +28,24 @@ builder.AddNpgsqlDbContext<AppDbContext>(
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+builder.Services.AddPushInfrastructure(builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddEndpoints();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
+
+// CORS de développement : autorise l'app mobile Expo (mode web) à appeler l'API
+// et le hub SignalR. AllowCredentials est requis par SignalR et interdit le
+// wildcard "*", d'où la liste explicite des origines de développement.
+const string DevCorsPolicy = "DevCors";
+builder.Services.AddCors(options =>
+    options.AddPolicy(DevCorsPolicy, policy => policy
+        .WithOrigins(
+            "http://localhost:8081",  // Expo web (Metro)
+            "http://localhost:19006") // Expo web (ancien port)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
 
 var app = builder.Build();
 
@@ -50,6 +65,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseCors(DevCorsPolicy);
 }
 
 app.UseAuthentication();

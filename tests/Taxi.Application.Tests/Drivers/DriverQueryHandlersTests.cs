@@ -41,18 +41,35 @@ public class DriverQueryHandlersTests
     }
 
     [Fact]
-    public async Task SetAvailability_should_toggle_and_update_when_found()
+    public async Task SetAvailability_online_should_capture_position_and_update_when_found()
     {
         var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
         _repo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<ISpecification<Driver>>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(driver);
         var handler = new SetAvailabilityCommandHandler(_repo.Object);
 
-        var result = await handler.Handle(new SetAvailabilityCommand("u-1", true), CancellationToken.None);
+        var result = await handler.Handle(new SetAvailabilityCommand("u-1", true, 11.58, 43.14), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.IsAvailable.Should().BeTrue();
+        driver.LastLatitude.Should().Be(11.58);
+        driver.LastLongitude.Should().Be(43.14);
         _repo.Verify(r => r.UpdateAsync(driver, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetAvailability_offline_should_not_require_coordinates()
+    {
+        var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+        driver.GoOnline(11.58, 43.14);
+        _repo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<ISpecification<Driver>>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(driver);
+        var handler = new SetAvailabilityCommandHandler(_repo.Object);
+
+        var result = await handler.Handle(new SetAvailabilityCommand("u-1", false), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.IsAvailable.Should().BeFalse();
     }
 
     [Fact]
@@ -62,7 +79,7 @@ public class DriverQueryHandlersTests
              .ReturnsAsync((Driver?)null);
         var handler = new SetAvailabilityCommandHandler(_repo.Object);
 
-        var result = await handler.Handle(new SetAvailabilityCommand("u-x", true), CancellationToken.None);
+        var result = await handler.Handle(new SetAvailabilityCommand("u-x", true, 11.58, 43.14), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.NotFound);

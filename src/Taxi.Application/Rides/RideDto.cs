@@ -12,7 +12,8 @@ public sealed record RideDto(
     string PickupZone, string DestinationZone,
     double? PickupLatitude, double? PickupLongitude,
     double? DestinationLatitude, double? DestinationLongitude,
-    decimal EstimatedPrice, string Status,
+    decimal EstimatedPrice, decimal? FinalPrice, string? PaymentMethod, string Status,
+    string? CancelledBy, string? CancellationReason, string? CancellationNote,
     DateTime? AcceptedAt, DateTime? CompletedAt, DateTime CreatedAt)
 {
     public static RideDto From(Ride r) => new(
@@ -21,6 +22,7 @@ public sealed record RideDto(
         r.PickupZone, r.DestinationZone,
         r.PickupLatitude, r.PickupLongitude,
         r.DestinationLatitude, r.DestinationLongitude,
-        r.EstimatedPrice, r.Status.ToString(),
+        r.EstimatedPrice, r.FinalPrice, r.PaymentMethod?.ToString(), r.Status.ToString(),
+        r.CancelledBy?.ToString(), r.CancellationReason?.ToString(), r.CancellationNote,
         r.AcceptedAt, r.CompletedAt, r.CreatedAt);
 }

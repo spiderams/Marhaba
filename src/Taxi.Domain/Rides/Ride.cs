@@ -20,12 +20,54 @@ public sealed class Ride : Entity
     public double? DestinationLatitude { get; private set; }
     public double? DestinationLongitude { get; private set; }
     public decimal EstimatedPrice { get; private set; }
+
+    /// <summary>
+    /// Montant réellement dû, figé à la complétion de la course (<see cref="Complete"/>). <c>null</c> tant que
+    /// la course n'est pas terminée. Sert de référence pour la facturation et les statistiques de chiffre d'affaires.
+    /// </summary>
+    public decimal? FinalPrice { get; private set; }
+
+    /// <summary>
+    /// Mode de paiement figé à la complétion de la course. <c>null</c> tant que la course n'est pas terminée.
+    /// </summary>
+    public PaymentMethod? PaymentMethod { get; private set; }
     public RideStatus Status { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
-    public int? OfferedDriverId { get; private set; }
+
+    /// <summary>Partie ayant annulé la course. <c>null</c> si la course n'a pas été annulée.</summary>
+    public CancelledBy? CancelledBy { get; private set; }
+
+    /// <summary>Motif d'annulation figé au moment de l'annulation. <c>null</c> si la course n'a pas été annulée.</summary>
+    public CancellationReason? CancellationReason { get; private set; }
+
+    /// <summary>Précision facultative en texte libre accompagnant le motif d'annulation.</summary>
+    public string? CancellationNote { get; private set; }
+    private readonly List<int> _offeredDriverIds = [];
+
+    /// <summary>
+    /// Chauffeurs de la vague en cours auxquels la course est actuellement offerte (premier arrivé gagne).
+    /// </summary>
+    public IReadOnlyCollection<int> OfferedDriverIds => _offeredDriverIds.AsReadOnly();
     public DateTime? OfferExpiresAt { get; private set; }
     public List<int> TriedDriverIds { get; private set; } = [];
+
+    /// <summary>
+    /// Nombre maximal de vagues de dispatch tentées avant d'abandonner la recherche d'un chauffeur.
+    /// Au-delà, la course est considérée comme sans chauffeur disponible.
+    /// </summary>
+    public const int MaxWaves = 3;
+
+    /// <summary>
+    /// Nombre de vagues de dispatch déjà émises pour cette course, incrémenté à chaque appel d'<see cref="OfferWave"/>.
+    /// </summary>
+    public int WaveCount { get; private set; }
+
+    /// <summary>
+    /// Indique que le plafond de vagues (<see cref="MaxWaves"/>) est atteint : plus aucune nouvelle vague
+    /// ne doit être tentée et la course peut être abandonnée proprement.
+    /// </summary>
+    public bool MaxWavesReached => WaveCount >= MaxWaves;
 
     private Ride() { } // EF
 
@@ -97,72 +139,94 @@ public sealed class Ride : Entity
     }
 
     /// <summary>
-    /// Clôture la course à l'arrivée à destination :
-    /// fait passer la course de <see cref="RideStatus.InProgress"/> à <see cref="RideStatus.Completed"/>
-    /// et enregistre l'heure de fin.
+    /// Clôture la course à l'arrivée à destination : fait passer la course de <see cref="RideStatus.InProgress"/>
+    /// à <see cref="RideStatus.Completed"/>, fige le montant réellement dû (<paramref name="finalPrice"/>) et le
+    /// mode de paiement (<paramref name="paymentMethod"/>), et enregistre l'heure de fin.
     /// </summary>
-    public Result Complete()
+    public Result Complete(decimal finalPrice, PaymentMethod paymentMethod)
     {
         if (Status != RideStatus.InProgress)
             return Result.Failure(RideErrors.InvalidTransition);
 
         Status = RideStatus.Completed;
+        FinalPrice = finalPrice;
+        PaymentMethod = paymentMethod;
         CompletedAt = DateTime.UtcNow;
         return Result.Success();
     }
 
     /// <summary>
     /// Annulation initiée par le client : autorisée uniquement si la course est encore
-    /// en attente, offerte, acceptée ou si le chauffeur vient d'arriver.
+    /// en attente, offerte, acceptée ou si le chauffeur vient d'arriver. Capture le motif
+    /// (<paramref name="reason"/>) et une précision facultative (<paramref name="note"/>) pour l'arbitrage.
     /// </summary>
-    public Result CancelByClient()
+    public Result CancelByClient(CancellationReason reason, string? note = null)
     {
         if (Status is not (RideStatus.Pending or RideStatus.Offered or RideStatus.Accepted or RideStatus.DriverArrived))
             return Result.Failure(RideErrors.CannotCancel);
 
-        Status = RideStatus.Cancelled;
+        Cancel(Rides.CancelledBy.Client, reason, note);
         return Result.Success();
     }
 
     /// <summary>
     /// Annulation initiée par le chauffeur : uniquement possible si la course est acceptée
     /// ou si le chauffeur est déjà arrivé sur place. La course retourne au pool pour être réattribuée.
+    /// Capture le motif (<paramref name="reason"/>) et une précision facultative (<paramref name="note"/>).
     /// </summary>
-    public Result CancelByDriver()
+    public Result CancelByDriver(CancellationReason reason, string? note = null)
     {
         if (Status is not (RideStatus.Accepted or RideStatus.DriverArrived))
             return Result.Failure(RideErrors.CannotCancel);
 
-        Status = RideStatus.Cancelled;
+        Cancel(Rides.CancelledBy.Driver, reason, note);
         return Result.Success();
     }
 
     /// <summary>
-    /// Propose la course à un chauffeur spécifique avec une fenêtre d'expiration :
-    /// passe au statut <see cref="RideStatus.Offered"/> et bloque la course pour les autres chauffeurs
-    /// le temps que l'offre soit acceptée ou expire.
+    /// Applique l'annulation : passe au statut <see cref="RideStatus.Cancelled"/> et fige qui annule et pourquoi.
     /// </summary>
-    public Result Offer(int driverId, DateTime expiresAt)
+    private void Cancel(CancelledBy by, CancellationReason reason, string? note)
+    {
+        Status = RideStatus.Cancelled;
+        CancelledBy = by;
+        CancellationReason = reason;
+        CancellationNote = note;
+    }
+
+    /// <summary>
+    /// Propose la course à une vague de chauffeurs simultanément avec une fenêtre d'expiration commune :
+    /// passe au statut <see cref="RideStatus.Offered"/>, enregistre la vague et marque ces chauffeurs comme essayés.
+    /// </summary>
+    public Result OfferWave(IEnumerable<int> driverIds, DateTime expiresAt)
     {
         if (Status != RideStatus.Pending)
             return Result.Failure(RideErrors.NotPending);
 
+        _offeredDriverIds.Clear();
+        foreach (var id in driverIds)
+        {
+            if (!_offeredDriverIds.Contains(id))
+                _offeredDriverIds.Add(id);
+            MarkDriverTried(id);
+        }
+
         Status = RideStatus.Offered;
-        OfferedDriverId = driverId;
         OfferExpiresAt = expiresAt;
+        WaveCount++;
         return Result.Success();
     }
 
     /// <summary>
-    /// Confirme l'acceptation d'une offre par le chauffeur ciblé :
-    /// vérifie que le chauffeur est bien le destinataire de l'offre et que celle-ci n'a pas expiré,
-    /// puis fait passer la course à <see cref="RideStatus.Accepted"/>.
+    /// Confirme l'acceptation d'une offre par un chauffeur de la vague : vérifie qu'il fait partie de la vague
+    /// en cours et que celle-ci n'a pas expiré, puis fait passer la course à <see cref="RideStatus.Accepted"/>.
+    /// Le premier chauffeur à accepter gagne ; les suivants échoueront car le statut n'est plus <c>Offered</c>.
     /// </summary>
     public Result AcceptOffer(int driverId)
     {
         if (Status != RideStatus.Offered)
             return Result.Failure(RideErrors.NotOffered);
-        if (OfferedDriverId != driverId)
+        if (!_offeredDriverIds.Contains(driverId))
             return Result.Failure(RideErrors.OfferMismatch);
         if (OfferExpiresAt is null || OfferExpiresAt <= DateTime.UtcNow)
             return Result.Failure(RideErrors.OfferExpired);
@@ -170,14 +234,34 @@ public sealed class Ride : Entity
         DriverId = driverId;
         Status = RideStatus.Accepted;
         AcceptedAt = DateTime.UtcNow;
-        OfferedDriverId = null;
+        _offeredDriverIds.Clear();
         OfferExpiresAt = null;
         return Result.Success();
     }
 
     /// <summary>
-    /// Remet la course au statut <see cref="RideStatus.Pending"/> lorsqu'une offre expire ou est refusée,
-    /// permettant au système d'en proposer une nouvelle à un autre chauffeur.
+    /// Refus d'une offre par un chauffeur de la vague : le retire de la vague en cours. Si la vague devient vide,
+    /// la course retourne au statut <see cref="RideStatus.Pending"/> afin d'être réattribuée.
+    /// </summary>
+    public Result DeclineOffer(int driverId)
+    {
+        if (Status != RideStatus.Offered)
+            return Result.Failure(RideErrors.NotOffered);
+        if (!_offeredDriverIds.Contains(driverId))
+            return Result.Failure(RideErrors.OfferMismatch);
+
+        _offeredDriverIds.Remove(driverId);
+        if (_offeredDriverIds.Count == 0)
+        {
+            Status = RideStatus.Pending;
+            OfferExpiresAt = null;
+        }
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Remet la course au statut <see cref="RideStatus.Pending"/> lorsqu'une vague expire,
+    /// permettant au système de proposer une nouvelle vague à d'autres chauffeurs.
     /// </summary>
     public Result ReturnToPending()
     {
@@ -185,8 +269,23 @@ public sealed class Ride : Entity
             return Result.Failure(RideErrors.InvalidTransition);
 
         Status = RideStatus.Pending;
-        OfferedDriverId = null;
+        _offeredDriverIds.Clear();
         OfferExpiresAt = null;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Abandonne proprement la course lorsqu'aucun chauffeur n'a pu être trouvé après épuisement des vagues :
+    /// fait passer la course de <see cref="RideStatus.Pending"/> vers l'état terminal <see cref="RideStatus.NoDriverFound"/>.
+    /// La décision d'abandonner (plafond de vagues atteint) revient à l'orchestrateur de dispatch ;
+    /// l'agrégat garantit seulement que la course est bien en attente au moment de l'abandon.
+    /// </summary>
+    public Result MarkNoDriverFound()
+    {
+        if (Status != RideStatus.Pending)
+            return Result.Failure(RideErrors.NotPending);
+
+        Status = RideStatus.NoDriverFound;
         return Result.Success();
     }
 

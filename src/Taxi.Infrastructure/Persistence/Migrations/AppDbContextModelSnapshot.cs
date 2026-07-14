@@ -224,6 +224,10 @@ namespace Taxi.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("license_number");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -274,6 +278,10 @@ namespace Taxi.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<string>("DeviceToken")
+                        .HasColumnType("text")
+                        .HasColumnName("device_token");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -553,6 +561,21 @@ namespace Taxi.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("accepted_at");
 
+                    b.Property<string>("CancellationNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("cancellation_note");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<string>("CancelledBy")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("cancelled_by");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -594,13 +617,18 @@ namespace Taxi.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("estimated_price");
 
+                    b.Property<decimal?>("FinalPrice")
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("final_price");
+
                     b.Property<DateTime?>("OfferExpiresAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("offer_expires_at");
 
-                    b.Property<int?>("OfferedDriverId")
-                        .HasColumnType("integer")
-                        .HasColumnName("offered_driver_id");
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("payment_method");
 
                     b.Property<string>("PickupAddress")
                         .IsRequired()
@@ -632,6 +660,23 @@ namespace Taxi.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("integer[]")
                         .HasColumnName("tried_driver_ids");
+
+                    b.Property<int>("WaveCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("wave_count");
+
+                    b.PrimitiveCollection<List<int>>("_offeredDriverIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("offered_driver_ids")
+                        .HasDefaultValueSql("'{}'::integer[]");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_rides");

@@ -17,6 +17,8 @@
     <PackageReference Include="Microsoft.IdentityModel.Tokens" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" />
+    <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Google.Apis.Auth" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -24,6 +26,9 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Taxi.Application.Tests" />
+    <InternalsVisibleTo Include="Taxi.IntegrationTests" />
+    <!-- Permet à Moq (Castle DynamicProxy) de mocker les types internal de cet assembly. -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
 </Project>
