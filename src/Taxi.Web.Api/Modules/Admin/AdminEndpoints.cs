@@ -1,4 +1,5 @@
 using Taxi.Application.Administration;
+using Taxi.Application.Administration.Drivers;
 using Taxi.Application.Administration.Listing;
 using Taxi.Application.Administration.Stats;
 using Taxi.Application.Drivers;
@@ -44,6 +45,27 @@ public sealed class AdminEndpoints : IEndpoint
             IQueryHandler<GetReportsQuery, IReadOnlyList<ReportDto>> handler, CancellationToken ct) =>
                 (await handler.Handle(new GetReportsQuery(), ct)).ToHttpResult())
             .WithName("AdminReports").WithSummary("Liste des signalements");
+
+             group.MapPost("/drivers/{driverId:int}/approve", async (
+            int driverId,
+            ICommandHandler<ApproveDriverCommand, DriverDto> handler,
+            CancellationToken ct) =>
+                (await handler.Handle(new ApproveDriverCommand(driverId), ct)).ToHttpResult())
+            .WithName("AdminApproveDriver").WithSummary("Approuve un chauffeur");
+
+        group.MapPost("/drivers/{driverId:int}/suspend", async (
+            int driverId,
+            ICommandHandler<SuspendDriverCommand, DriverDto> handler,
+            CancellationToken ct) =>
+                (await handler.Handle(new SuspendDriverCommand(driverId), ct)).ToHttpResult())
+            .WithName("AdminSuspendDriver").WithSummary("Suspend un chauffeur");
+
+        group.MapPost("/drivers/{driverId:int}/reject", async (
+            int driverId,
+            ICommandHandler<RejectDriverCommand, DriverDto> handler,
+            CancellationToken ct) =>
+                (await handler.Handle(new RejectDriverCommand(driverId), ct)).ToHttpResult())
+            .WithName("AdminRejectDriver").WithSummary("Rejette un chauffeur");
 
         // Les tarifs par zone (CRUD Admin) sont dans Modules/Pricing/ZonePriceAdminEndpoints.
     }
