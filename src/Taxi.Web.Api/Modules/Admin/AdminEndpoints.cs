@@ -66,6 +66,7 @@ public sealed class AdminEndpoints : IEndpoint
             CancellationToken ct) =>
                 (await handler.Handle(new RejectDriverCommand(driverId), ct)).ToHttpResult())
             .WithName("AdminRejectDriver").WithSummary("Rejette un chauffeur");
+
         // Les tarifs par zone (CRUD Admin) sont dans Modules/Pricing/ZonePriceAdminEndpoints.
     }
 }
