@@ -16,7 +16,8 @@ public class DriverTests
         driver.VehiclePlate.Should().Be("DJ-1234");
         driver.VehicleType.Should().Be("Taxi");
         driver.IsAvailable.Should().BeFalse();
-        driver.AverageRating.Should().Be(0);
+        driver.AverageRating.Should().Be(0);     
+        driver.CanReceiveRides.Should().BeFalse();
         driver.Status.Should().Be(DriverStatus.PendingApproval);
     }
 
