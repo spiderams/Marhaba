@@ -2,8 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Taxi.Application.Abstractions;
 using Taxi.Application.Dispatch;
+using Taxi.Application.Identity.Otp;
 using Taxi.Infrastructure.Dispatch;
 using Taxi.Infrastructure.Persistence;
+using Taxi.Infrastructure.Sms;
 
 namespace Taxi.Infrastructure;
 
@@ -16,6 +18,7 @@ public static class DependencyInjection
     {
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IDriverLocator, DriverLocator>();
+        services.AddScoped<ISmsSender, LoggingSmsSender>();
         services.AddHostedService<OfferTimeoutService>();
         return services;
     }
