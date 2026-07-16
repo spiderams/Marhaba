@@ -13,6 +13,7 @@ internal sealed class RegisterCommandValidator : AbstractValidator<RegisterComma
         RuleFor(c => c.FullName).NotEmpty();
         RuleFor(c => c.PhoneNumber).NotEmpty();
         RuleFor(c => c.Password).NotEmpty().MinimumLength(6);
+        RuleFor(c => c.OtpCode).NotEmpty().Length(6);
         RuleFor(c => c.Role).Must(role => RoleNames.All.Contains(role))
             .WithMessage("Rôle invalide (attendu: Client, Driver ou Admin).");
     }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Taxi.Application.Abstractions;
 using Taxi.Application.Identity.Auth;
+using Taxi.Application.Identity.Otp;
 using Taxi.Domain.Identity;
 using Taxi.SharedKernel;
 using Taxi.SharedKernel.Messaging;
@@ -12,6 +14,7 @@ namespace Taxi.Application.Identity.Auth.Register;
 /// </summary>
 internal sealed partial class RegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
+    IRepository<PhoneOtpChallenge> otpRepository,
     AuthTokenIssuer issuer,
     ILogger<RegisterCommandHandler> logger)
     : ICommandHandler<RegisterCommand, AuthResponse>
@@ -22,10 +25,18 @@ internal sealed partial class RegisterCommandHandler(
         if (existing is not null)
             return Result.Failure<AuthResponse>(Error.Conflict("Auth.PhoneTaken", "Ce numéro est déjà utilisé."));
 
+        var challenge = await otpRepository.FirstOrDefaultAsync(
+           new LatestPhoneOtpChallengeSpec(command.PhoneNumber), cancellationToken);
+        if (challenge is null || !challenge.Verify(command.OtpCode, DateTime.UtcNow, maxAttempts: 5))
+            return Result.Failure<AuthResponse>(Error.Validation("Auth.PhoneNotVerified", "Code OTP invalide ou expiré."));
+
+        await otpRepository.UpdateAsync(challenge, cancellationToken);
+
         var user = new ApplicationUser
         {
             UserName = command.PhoneNumber,
             PhoneNumber = command.PhoneNumber,
+            PhoneNumberConfirmed = true,
             FullName = command.FullName
         };
 
