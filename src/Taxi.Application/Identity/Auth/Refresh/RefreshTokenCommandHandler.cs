@@ -32,17 +32,20 @@ internal sealed partial class RefreshTokenCommandHandler(
 
         if (stored.IsRevoked)
         {
-            // Reuse of an already-rotated token → revoke the whole family.
             var family = await refreshTokens.ListAsync(new RefreshTokenByFamilySpec(stored.FamilyId), cancellationToken);
             foreach (var token in family)
                 token.Revoke("TokenReuse");
+
             LogTokenReuseDetected(logger, stored.FamilyId);
             await refreshTokens.SaveChangesAsync(cancellationToken);
-            return Result.Failure<AuthResponse>(Error.Unauthorized("Auth.TokenReuse", "Réutilisation de token détectée."));
+
+            return Result.Failure<AuthResponse>(
+                Error.Unauthorized("Auth.TokenReuse", "Réutilisation de token détectée."));
         }
 
         if (stored.ExpiresAt <= DateTime.UtcNow)
-            return Result.Failure<AuthResponse>(Error.Unauthorized("Auth.ExpiredToken", "Refresh token expiré."));
+            return Result.Failure<AuthResponse>(
+                Error.Unauthorized("Auth.ExpiredToken", "Refresh token expiré."));
 
         var user = await userManager.FindByIdAsync(stored.UserId);
         if (user is null)
