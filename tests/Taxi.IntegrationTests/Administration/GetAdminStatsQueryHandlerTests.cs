@@ -3,6 +3,7 @@ using Taxi.Application.Administration;
 using Taxi.Application.Administration.Stats;
 using Taxi.Domain.Rides;
 using Taxi.Infrastructure.Persistence;
+using Taxi.IntegrationTests.Identity;
 using Xunit;
 
 namespace Taxi.IntegrationTests.Administration;
