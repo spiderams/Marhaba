@@ -16,6 +16,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<ZonePrice> ZonePrices => Set<ZonePrice>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PhoneOtpChallenge> PhoneOtpChallenges => Set<PhoneOtpChallenge>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Ride> Rides => Set<Ride>();
     public DbSet<Rating> Ratings => Set<Rating>();
