@@ -35,7 +35,6 @@ public sealed class RefreshToken : Entity
     public bool IsActive => !IsRevoked && ExpiresAt > DateTime.UtcNow;
 
     /// <summary>
-    /// Révoque ce token (déconnexion, rotation ou détection d'abus) en enregistrant la raison
     /// et l'éventuel token successeur. Une révocation déjà effectuée est ignorée (idempotent).
     /// </summary>
     public void Revoke(string reason, int? replacedByTokenId = null)
