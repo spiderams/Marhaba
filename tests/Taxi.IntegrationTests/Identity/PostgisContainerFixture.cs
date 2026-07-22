@@ -1,8 +1,10 @@
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Taxi.Domain.Identity;
 using Taxi.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
-namespace Taxi.IntegrationTests;
+namespace Taxi.IntegrationTests.Identity;
 
 /// <summary>
 /// Fixture xUnit démarrant un conteneur PostgreSQL + PostGIS jetable pour les tests d'intégration
@@ -60,5 +62,13 @@ public sealed class PostgisContainerFixture : IAsyncLifetime
     {
         await using var db = CreateContext();
         await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE rides RESTART IDENTITY CASCADE;");
+    }
+    [Fact]
+    public void Hash_ShouldNormalize_Whitespace_Around_Inputs()
+    {
+        var trimmed = PhoneOtpChallenge.Hash("+25377123456", PhoneOtpChallenge.RegistrationPurpose, "123456");
+        var padded = PhoneOtpChallenge.Hash("  +25377123456  ", $"  {PhoneOtpChallenge.RegistrationPurpose}  ", "  123456  ");
+
+        padded.Should().Be(trimmed);
     }
 }

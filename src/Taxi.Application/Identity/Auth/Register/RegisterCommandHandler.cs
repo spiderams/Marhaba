@@ -26,7 +26,7 @@ internal sealed partial class RegisterCommandHandler(
             return Result.Failure<AuthResponse>(Error.Conflict("Auth.PhoneTaken", "Ce numéro est déjà utilisé."));
 
         var challenge = await otpRepository.FirstOrDefaultAsync(
-           new LatestPhoneOtpChallengeSpec(command.PhoneNumber), cancellationToken);
+            new Taxi.Application.Identity.Otp.LatestPhoneOtpChallengeSpec(command.PhoneNumber), cancellationToken);
         if (challenge is null || !challenge.Verify(command.OtpCode, DateTime.UtcNow, maxAttempts: 5))
             return Result.Failure<AuthResponse>(Error.Validation("Auth.PhoneNotVerified", "Code OTP invalide ou expiré."));
 

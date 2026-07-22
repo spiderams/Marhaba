@@ -16,7 +16,7 @@ internal sealed class RequestRegistrationOtpCommandHandler(
     public async Task<Result<bool>> Handle(RequestRegistrationOtpCommand command, CancellationToken cancellationToken)
     {
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-        var challenge = PhoneOtpChallenge.Create(command.PhoneNumber, code, DateTime.UtcNow.Add(OtpLifetime));
+        var challenge = PhoneOtpChallenge.CreateRegistration(command.PhoneNumber, code, DateTime.UtcNow.Add(OtpLifetime));
 
         await repository.AddAsync(challenge, cancellationToken);
         await smsSender.SendAsync(

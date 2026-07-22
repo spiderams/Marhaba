@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Taxi.Domain.Drivers;
 using Taxi.Infrastructure.Dispatch;
+using Taxi.IntegrationTests.Identity;
 
 namespace Taxi.IntegrationTests.Dispatch;
 
