@@ -1,0 +1,252 @@
+# Tester l'inscription avec OTP
+
+Ce guide explique comment tester le processus complet d'inscription avec OTP en local.
+
+---
+
+# Prérequis
+
+- .NET Aspire démarré
+- API en état **Running**
+- PostgreSQL en état **Running**
+- URL API disponible
+
+Exemple :
+
+```
+http://localhost:5004
+```
+
+> Vérifiez toujours l'URL affichée dans le Dashboard Aspire. Le port peut changer.
+
+---
+
+# Étape 1 - Démarrer Aspire
+
+Depuis la racine du projet :
+
+```powershell
+dotnet run --project .\Taxi.AppHost\Taxi.AppHost.csproj
+```
+
+Attendre que les ressources suivantes soient **Running** :
+
+- api
+- postgres
+- taxidb
+
+---
+
+# Étape 2 - Demander un OTP
+
+Endpoint
+
+```
+POST /api/auth/register/otp
+```
+
+PowerShell :
+
+```powershell
+$otpRequest = @{
+    phoneNumber = "+25377123456"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://localhost:5004/api/auth/register/otp" `
+    -ContentType "application/json" `
+    -Body $otpRequest
+```
+
+Réponse attendue :
+
+```
+True
+```
+
+ou une réponse JSON de succès.
+
+---
+
+# Étape 3 - Lire le code OTP
+
+Dans Aspire :
+
+```
+Resources
+    ↓
+api
+    ↓
+Console Logs
+```
+
+Chercher un message semblable à :
+
+```
+SMS OTP prêt pour +25377123456:
+TaxiDjibouti: votre code de vérification est 589554.
+Il expire dans 5 minutes.
+```
+
+Dans cet exemple :
+
+```
+OTP = 589554
+```
+
+---
+
+# Étape 4 - Créer le compte
+
+Endpoint
+
+```
+POST /api/auth/register
+```
+
+Remplacer le code OTP par celui affiché dans les logs.
+
+```powershell
+$registerRequest = @{
+    fullName    = "Ayanleh Moussa"
+    phoneNumber = "+25377123456"
+    password    = "Password123!"
+    role        = "Client"
+    otpCode     = "589554"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://localhost:5004/api/auth/register" `
+    -ContentType "application/json" `
+    -Body $registerRequest
+```
+
+---
+
+# Réponse attendue
+
+```json
+{
+  "accessToken": "...",
+  "refreshToken": "...",
+  "tokenType": "Bearer",
+  "expiresAt": "...",
+  "refreshTokenExpiresAt": "...",
+  "user": {
+    "id": "...",
+    "fullName": "Ayanleh Moussa",
+    "phoneNumber": "+25377123456",
+    "roles": [
+      "Client"
+    ]
+  }
+}
+```
+
+Si cette réponse est obtenue :
+
+- ✅ Le compte a été créé
+- ✅ Le téléphone est vérifié
+- ✅ L'OTP est valide
+- ✅ L'utilisateur est authentifié
+- ✅ Les tokens JWT ont été générés
+
+---
+
+# Tester un OTP invalide
+
+Utiliser volontairement un mauvais code.
+
+```powershell
+$registerRequest = @{
+    fullName    = "Test User"
+    phoneNumber = "+25377123457"
+    password    = "Password123!"
+    role        = "Client"
+    otpCode     = "000000"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://localhost:5004/api/auth/register" `
+    -ContentType "application/json" `
+    -Body $registerRequest
+```
+
+Réponse attendue :
+
+```
+400 Bad Request
+```
+
+ou
+
+```
+Auth.PhoneNotVerified
+```
+
+---
+
+# Dépannage
+
+## Impossible de se connecter
+
+Vérifier que :
+
+- Aspire est démarré
+- api est Running
+- l'URL est correcte
+
+---
+
+## Aucun OTP dans les logs
+
+Vérifier :
+
+- ressource **api**
+- Console Logs
+- envoyer de nouveau :
+
+```
+POST /api/auth/register/otp
+```
+
+---
+
+## OTP expiré
+
+Les OTP expirent après :
+
+```
+5 minutes
+```
+
+Demander un nouveau code.
+
+---
+
+## Téléphone déjà utilisé
+
+Utiliser un autre numéro :
+
+```
++25377123457
+```
+
+---
+
+# Résumé
+
+```
+1. Démarrer Aspire
+
+2. POST /api/auth/register/otp
+
+3. Lire le code OTP dans les logs
+
+4. POST /api/auth/register
+
+5. Vérifier que les tokens JWT sont retournés
+```
