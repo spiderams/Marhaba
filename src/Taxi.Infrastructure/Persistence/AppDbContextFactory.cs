@@ -3,16 +3,20 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Taxi.Infrastructure.Persistence;
 
-/// <summary>
-/// Fabrique design-time du DbContext pour les commandes `dotnet ef` (migrations).
-/// </summary>
-internal sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
+internal sealed class AppDbContextFactory
+    : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
+        var connectionString =
+            Environment.GetEnvironmentVariable(
+                "ConnectionStrings__taxidb")
+            ?? throw new InvalidOperationException(
+                "Définis la variable ConnectionStrings__taxidb avant d'exécuter les migrations.");
+
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(
-                "Host=localhost;Database=taxidb;Username=postgres;Password=postgres",
+                connectionString,
                 npgsql => npgsql.UseNetTopologySuite())
             .UseSnakeCaseNamingConvention()
             .Options;

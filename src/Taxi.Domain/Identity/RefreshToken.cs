@@ -18,11 +18,8 @@ public sealed class RefreshToken : Entity
     public Guid FamilyId { get; private set; }
     public int? ReplacedByTokenId { get; private set; }
 
-    private RefreshToken() { } // EF
+    private RefreshToken() { }
 
-    /// <summary>
-    /// Crée un nouveau refresh token pour un utilisateur, avec sa date d'expiration et l'identifiant de famille de rotation.
-    /// </summary>
     public static RefreshToken Create(string userId, string tokenHash, DateTime expiresAt, Guid familyId)
         => new()
         {
@@ -35,6 +32,7 @@ public sealed class RefreshToken : Entity
     public bool IsActive => !IsRevoked && ExpiresAt > DateTime.UtcNow;
 
     /// <summary>
+    /// Révoque ce token (déconnexion, rotation ou détection d'abus) en enregistrant la raison
     /// et l'éventuel token successeur. Une révocation déjà effectuée est ignorée (idempotent).
     /// </summary>
     public void Revoke(string reason, int? replacedByTokenId = null)
