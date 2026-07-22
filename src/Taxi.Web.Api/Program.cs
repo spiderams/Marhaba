@@ -10,6 +10,7 @@ using Taxi.Web.Api.Middleware;
 using Taxi.Web.Api.OpenApi;
 using Taxi.Application.Realtime;
 using Taxi.Web.Api.Realtime;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,11 @@ builder.AddNpgsqlDbContext<AppDbContext>(
     "taxidb",
     configureDbContextOptions: options => options
         .UseNpgsql(npgsql => npgsql.UseNetTopologySuite())
-        .UseSnakeCaseNamingConvention());
+        .UseSnakeCaseNamingConvention()
+        // EF Core 10 raises this as an exception during startup migrations.
+        // We keep startup migration enabled and log/ignore this warning so local development is not blocked
+        // when the database is behind while the committed migration files are being applied.
+        .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();

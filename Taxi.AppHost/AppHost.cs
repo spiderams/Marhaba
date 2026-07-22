@@ -1,8 +1,13 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgres = builder.AddPostgres("postgres")
-    .WithImage("postgis/postgis", "17-3.5")
-    .WithDataVolume();
+var postgresPassword = builder.AddParameter(
+    "postgres-password",
+    secret: true);
+
+var postgres = builder
+    .AddPostgres("postgres", password: postgresPassword)
+    .WithImage("postgis/postgis")
+    .WithImageTag("17-3.5");
 
 var taxidb = postgres.AddDatabase("taxidb");
 
