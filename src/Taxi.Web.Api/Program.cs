@@ -80,3 +80,7 @@ app.MapEndpoints();
 app.MapHub<RideHub>("/hubs/ride");
 
 app.Run();
+
+
+/// <summary>Point d'entrée exposé aux tests d'intégration via WebApplicationFactory.</summary>
+public partial class Program { }
