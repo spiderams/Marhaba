@@ -117,7 +117,7 @@ public sealed class ProfileTests
     {
         var validator = new UpdateProfileCommandValidator();
 
-        var result = validator.TestValidate(new UpdateProfileCommand("u-1", "Ayanleh Moussa"));
+        var result = validator.TestValidate(new UpdateProfileCommand("u-1", "Ali Moussa"));
 
         result.IsValid.Should().BeTrue();
     }

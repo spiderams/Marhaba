@@ -105,7 +105,7 @@ public sealed class RefreshTokenCommandHandlerTests
         var user = new ApplicationUser
         {
             Id = "u-1",
-            FullName = "Ayanleh Moussa",
+            FullName = "Ali Moussa",
             PhoneNumber = "+25377123456"
         };
 
