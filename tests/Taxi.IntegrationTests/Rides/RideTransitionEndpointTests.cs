@@ -30,13 +30,9 @@ public sealed class RideTransitionEndpointTests(PostgisContainerFixture fixture)
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
-            builder.ConfigureAppConfiguration((_, configuration) =>
-            {
-                configuration.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:taxidb"] = fixture.ConnectionString
-                });
-            });
+            builder.UseSetting(
+                 "ConnectionStrings:taxidb",
+                 fixture.ConnectionString);
 
             builder.ConfigureServices(services =>
             {
