@@ -202,6 +202,6 @@ public sealed class PasswordResetOtpTests
         Id = "u-1",
         UserName = PhoneNumber,
         PhoneNumber = PhoneNumber,
-        FullName = "Ayanleh Moussa"
+        FullName = "Ali Moussa"
     };
 }
