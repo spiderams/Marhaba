@@ -30,6 +30,18 @@ internal sealed class RidesByDriverSpec : Specification<Ride>
 }
 
 /// <summary>
+/// Spécification : sélectionne l'historique chauffeur, limité aux courses terminées
+/// qui portent un tarif final réel, triées de la plus récente à la plus ancienne.
+/// </summary>
+internal sealed class CompletedRideHistoryByDriverSpec : Specification<Ride>
+{
+    public CompletedRideHistoryByDriverSpec(int driverId)
+        => Query
+            .Where(r => r.DriverId == driverId && r.Status == RideStatus.Completed && r.FinalPrice != null)
+            .OrderByDescending(r => r.CompletedAt);
+}
+
+/// <summary>
 /// Spécification : sélectionne toutes les courses en attente de chauffeur (statut <c>Pending</c>), triées de la plus récente à la plus ancienne.
 /// </summary>
 internal sealed class PendingRidesSpec : Specification<Ride>
