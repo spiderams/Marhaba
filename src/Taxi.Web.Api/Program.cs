@@ -53,6 +53,7 @@ builder.Services.AddCors(options =>
         .AllowCredentials()));
 
 var app = builder.Build();
+builder.WebHost.UseUrls("http://0.0.0.0:5004");
 
 app.UseExceptionHandler();
 app.UseMiddleware<SecurityHeadersMiddleware>();
