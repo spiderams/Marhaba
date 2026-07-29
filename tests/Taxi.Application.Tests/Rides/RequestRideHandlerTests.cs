@@ -49,4 +49,60 @@ public class RequestRideHandlerTests
 
         _dispatcher.Verify(d => d.DispatchAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Theory]
+    [InlineData("Centre-ville", "Centre-ville")]
+    [InlineData("Centre-ville", " centre-VILLE ")]
+    public async Task Should_return_500_for_a_ride_inside_the_same_zone(
+     string fromZone,
+     string toZone)
+    {
+        // Arrange
+        _pricing
+            .Setup(p => p.Handle(
+                It.Is<EstimatePriceQuery>(q =>
+                    q.FromZone == fromZone &&
+                    q.ToZone == toZone),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                Result.Success(
+                    new EstimatePriceResponse(
+                        fromZone,
+                        toZone,
+                        500m)));
+
+        // Act
+        var result = await Handler().Handle(
+            new RequestRideCommand(
+                "client-1",
+                "Adresse départ",
+                "Adresse arrivée",
+                fromZone,
+                toZone,
+                null,
+                null,
+                null,
+                null),
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.EstimatedPrice.Should().Be(500m);
+        result.Value.Status.Should().Be("Pending");
+
+        _rides.Verify(
+            r => r.AddAsync(
+                It.Is<Ride>(ride =>
+                    ride.EstimatedPrice == 500m),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _pricing.Verify(
+            p => p.Handle(
+                It.Is<EstimatePriceQuery>(q =>
+                    q.FromZone == fromZone &&
+                    q.ToZone == toZone),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

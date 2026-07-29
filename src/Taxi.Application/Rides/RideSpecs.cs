@@ -28,7 +28,19 @@ internal sealed class RidesByDriverSpec : Specification<Ride>
     public RidesByDriverSpec(int driverId)
         => Query.Where(r => r.DriverId == driverId).OrderByDescending(r => r.CreatedAt);
 }
-
+/// <summary>
+/// Spécification : recherche une course non terminale pour empêcher un client
+/// de créer plusieurs réservations simultanées.
+/// </summary>
+internal sealed class ActiveRideByClientSpec : Specification<Ride>
+{
+    public ActiveRideByClientSpec(string clientId)
+        => Query.Where(r =>
+            r.ClientId == clientId &&
+            r.Status != RideStatus.Completed &&
+            r.Status != RideStatus.Cancelled &&
+            r.Status != RideStatus.NoDriverFound);
+}
 /// <summary>
 /// Spécification : sélectionne toutes les courses en attente de chauffeur (statut <c>Pending</c>), triées de la plus récente à la plus ancienne.
 /// </summary>
