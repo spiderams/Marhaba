@@ -70,7 +70,19 @@ public sealed class ExpiredOffersSpec : Specification<Ride>
     public ExpiredOffersSpec(DateTime now)
         => Query.Where(r => r.Status == RideStatus.Offered && r.OfferExpiresAt != null && r.OfferExpiresAt <= now);
 }
-
+/// <summary>
+/// Spécification : recherche une course non terminale pour empêcher un client
+/// de créer plusieurs réservations simultanées.
+/// </summary>
+internal sealed class ActiveRideByClientSpec : Specification<Ride>
+{
+    public ActiveRideByClientSpec(string clientId)
+        => Query.Where(r =>
+            r.ClientId == clientId &&
+            r.Status != RideStatus.Completed &&
+            r.Status != RideStatus.Cancelled &&
+            r.Status != RideStatus.NoDriverFound);
+}
 /// <summary>
 /// Spécification : sélectionne les courses terminées (statut <c>Completed</c>), qui portent un tarif final figé.
 /// Base des indicateurs de chiffre d'affaires.

@@ -15,9 +15,15 @@ internal sealed class EstimatePriceQueryHandler(IRepository<ZonePrice> repositor
         EstimatePriceQuery query, CancellationToken cancellationToken)
     {
         if (string.Equals(
+<<<<<<< HEAD
                query.FromZone.Trim(),
                query.ToZone.Trim(),
                StringComparison.OrdinalIgnoreCase))
+=======
+                query.FromZone.Trim(),
+                query.ToZone.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+>>>>>>> estimation-prix-depuis-pr54
         {
             return new EstimatePriceResponse(
                 query.FromZone,

@@ -23,3 +23,4 @@ public static class RideErrors
        "Ride.ActiveRideExists",
        "Vous avez déjà une course active.");
 }
+
