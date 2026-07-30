@@ -50,7 +50,6 @@ public class RequestRideHandlerTests
 
         _dispatcher.Verify(d => d.DispatchAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
-<<<<<<< HEAD
 
     [Theory]
     [InlineData("Centre-ville", "Centre-ville")]
@@ -106,29 +105,5 @@ public class RequestRideHandlerTests
                     q.ToZone == toZone),
                 It.IsAny<CancellationToken>()),
             Times.Once);
-=======
-    [Fact]
-    public async Task Should_reject_a_second_active_ride_for_the_same_client()
-    {
-        var activeRide = Ride.Request(
-            "client-1", "A", "B", "Centre-ville", "Balbala",
-            null, null, null, null, 1500m);
-        _rides.Setup(r => r.FirstOrDefaultAsync(
-                It.IsAny<ISpecification<Ride>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(activeRide);
-
-        var result = await Handler().Handle(new RequestRideCommand(
-            "client-1", "C", "D", "Héron", "Aéroport",
-            null, null, null, null), CancellationToken.None);
-
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(RideErrors.ActiveRideExists);
-        _rides.Verify(
-            r => r.AddAsync(It.IsAny<Ride>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        _dispatcher.Verify(
-            d => d.DispatchAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
-            Times.Never);
->>>>>>> estimation-prix-depuis-pr54
     }
 }
