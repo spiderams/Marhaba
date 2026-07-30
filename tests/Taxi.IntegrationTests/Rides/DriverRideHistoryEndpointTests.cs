@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Taxi.Application.Rides;
 using Taxi.Domain.Drivers;
 using Taxi.Domain.Rides;
+using Taxi.IntegrationTests.Identity;
 
 namespace Taxi.IntegrationTests.Rides;
 
