@@ -18,6 +18,10 @@ internal sealed class RequestRideCommandHandler(
 {
     public async Task<Result<RideDto>> Handle(RequestRideCommand command, CancellationToken cancellationToken)
     {
+        var activeRide = await rides.FirstOrDefaultAsync(
+          new ActiveRideByClientSpec(command.ClientId), cancellationToken);
+        if (activeRide is not null)
+            return Result.Failure<RideDto>(RideErrors.ActiveRideExists);
         var price = await priceEstimator.Handle(
             new EstimatePriceQuery(command.PickupZone, command.DestinationZone), cancellationToken);
         if (price.IsFailure)

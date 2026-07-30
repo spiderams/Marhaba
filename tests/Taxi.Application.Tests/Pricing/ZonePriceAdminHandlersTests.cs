@@ -97,4 +97,30 @@ public class ZonePriceAdminHandlersTests
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(PricingErrors.NotFound);
     }
+    [Theory]
+    [InlineData("Centre-ville", "Centre-ville")]
+    [InlineData("Centre-ville", " centre-VILLE ")]
+    public async Task Should_return_500_for_a_ride_inside_the_same_zone(
+    string fromZone,
+    string toZone)
+    {
+        // Arrange
+        var repo = RepoWith();
+        var handler = new EstimatePriceQueryHandler(repo.Object);
+
+        // Act
+        var result = await handler.Handle(
+            new EstimatePriceQuery(fromZone, toZone),
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Price.Should().Be(500m);
+
+        repo.Verify(
+            r => r.FirstOrDefaultAsync(
+                It.IsAny<ZonePriceByZonesSpec>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 }

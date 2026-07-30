@@ -9,6 +9,7 @@ namespace Taxi.Domain.Pricing;
 /// </summary>
 public sealed class ZonePrice : Entity
 {
+    public const decimal SameZonePrice = 500m;
     public const decimal DefaultPrice = 1000m;
 
     public string FromZone { get; private set; } = string.Empty;

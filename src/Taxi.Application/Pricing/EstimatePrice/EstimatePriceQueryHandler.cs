@@ -14,6 +14,16 @@ internal sealed class EstimatePriceQueryHandler(IRepository<ZonePrice> repositor
     public async Task<Result<EstimatePriceResponse>> Handle(
         EstimatePriceQuery query, CancellationToken cancellationToken)
     {
+        if (string.Equals(
+               query.FromZone.Trim(),
+               query.ToZone.Trim(),
+               StringComparison.OrdinalIgnoreCase))
+        {
+            return new EstimatePriceResponse(
+                query.FromZone,
+                query.ToZone,
+                ZonePrice.SameZonePrice);
+        }
         var match = await repository.FirstOrDefaultAsync(
             new ZonePriceByZonesSpec(query.FromZone, query.ToZone), cancellationToken);
 
