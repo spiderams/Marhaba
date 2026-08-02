@@ -11,6 +11,7 @@ using Taxi.Web.Api.OpenApi;
 using Taxi.Application.Realtime;
 using Taxi.Web.Api.Realtime;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Taxi.Web.Api.Modules.Drivers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,13 +32,19 @@ builder.AddNpgsqlDbContext<AppDbContext>(
         .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
 builder.Services.AddPushInfrastructure(builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddEndpoints();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
+if (!string.IsNullOrWhiteSpace(builder.Configuration["DriverDocuments:MalwareScanner:Endpoint"]))
+    builder.Services.AddHttpClient<IDriverDocumentMalwareScanner, HttpDriverDocumentMalwareScanner>();
+else if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+    builder.Services.AddSingleton<IDriverDocumentMalwareScanner, DevelopmentDocumentMalwareScanner>();
+else
+    throw new InvalidOperationException("DriverDocuments:MalwareScanner:Endpoint doit être configuré hors développement.");
 
 // CORS de développement : autorise l'app mobile Expo (mode web) à appeler l'API
 // et le hub SignalR. AllowCredentials est requis par SignalR et interdit le

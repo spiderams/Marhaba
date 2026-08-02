@@ -133,11 +133,12 @@ public class DriverTests
     {
         var driver = Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
         driver.Approve();
-
+        driver.SetAvailability(true);
         var result = driver.Suspend();
 
         result.IsSuccess.Should().BeTrue();
         driver.Status.Should().Be(DriverStatus.Suspended);
+        driver.IsAvailable.Should().BeFalse();
     }
 
     [Fact]
@@ -176,6 +177,7 @@ public class DriverTests
         driver.Status.Should().Be(DriverStatus.Approved);
     }
 
+  
     [Fact]
     public void CanReceiveRides_is_true_when_approved_and_available()
     {

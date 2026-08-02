@@ -15,13 +15,22 @@ public sealed class Driver : Entity
     public string VehicleType { get; private set; } = "Taxi";
     public bool IsAvailable { get; private set; }
     public DriverStatus Status { get; private set; }
+    public string? RejectionReason { get; private set; }
     public double AverageRating { get; private set; }
     public Point? LastLocation { get; private set; }
     public DateTime? LastLocationAt { get; private set; }
 
     public double? LastLatitude => LastLocation?.Y;
     public double? LastLongitude => LastLocation?.X;
+    public string? LicenseDocumentKey { get; private set; }
 
+    public string? VehicleRegistrationDocumentKey
+    {
+        get;
+        private set;
+    }
+
+    public string? IdentityDocumentKey { get; private set; }
     /// <summary>
     /// Garde métier d'éligibilité au dispatch : un chauffeur ne peut recevoir de courses que s'il est
     /// à la fois approuvé par un administrateur (<see cref="DriverStatus.Approved"/>) et disponible.
@@ -68,9 +77,14 @@ public sealed class Driver : Entity
     public Result Suspend()
     {
         if (Status != DriverStatus.Approved)
-            return Result.Failure(DriverErrors.InvalidStatusTransition);
+        {
+            return Result.Failure(
+                DriverErrors.InvalidStatusTransition);
+        }
 
         Status = DriverStatus.Suspended;
+        IsAvailable = false;
+
         return Result.Success();
     }
 
@@ -95,8 +109,10 @@ public sealed class Driver : Entity
         LicenseNumber = licenseNumber;
         VehiclePlate = vehiclePlate;
         VehicleType = vehicleType;
-    }
 
+        ResetRejectedApplication();
+    }
+    
     /// <summary>
     /// Bascule la disponibilité du chauffeur : seul un chauffeur disponible peut recevoir de nouvelles courses.
     /// Utilisé par le cycle de vie des courses pour marquer le chauffeur occupé (false) puis libre (true).
@@ -133,5 +149,72 @@ public sealed class Driver : Entity
     {
         LastLocation = new Point(longitude, latitude) { SRID = 4326 };
         LastLocationAt = DateTime.UtcNow;
+    }
+    public void SetDocument(
+     DriverDocumentType type,
+     string storageKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            storageKey);
+
+        switch (type)
+        {
+            case DriverDocumentType.License:
+                LicenseDocumentKey = storageKey;
+                break;
+
+            case DriverDocumentType.VehicleRegistration:
+                VehicleRegistrationDocumentKey =
+                    storageKey;
+                break;
+
+            case DriverDocumentType.Identity:
+                IdentityDocumentKey = storageKey;
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(type));
+        }
+
+        ResetRejectedApplication();
+    }
+
+    public string? GetDocumentKey(
+        DriverDocumentType type)
+    {
+        return type switch
+        {
+            DriverDocumentType.License =>
+                LicenseDocumentKey,
+
+            DriverDocumentType.VehicleRegistration =>
+                VehicleRegistrationDocumentKey,
+
+            DriverDocumentType.Identity =>
+                IdentityDocumentKey,
+
+            _ =>
+                throw new ArgumentOutOfRangeException(
+                    nameof(type)),
+        };
+    }
+    /// <summary>
+    /// Une correction du profil ou d'un justificatif rouvre un dossier rejeté.
+    ///
+    /// Le Chauffeur repasse en attente de validation, l'ancien motif de rejet
+    /// est supprimé et le Chauffeur reste hors ligne jusqu'à une nouvelle
+    /// approbation administrative.
+    /// </summary>
+    private void ResetRejectedApplication()
+    {
+        if (Status != DriverStatus.Rejected)
+        {
+            return;
+        }
+
+        Status = DriverStatus.PendingApproval;
+        RejectionReason = null;
+        IsAvailable = false;
     }
 }
