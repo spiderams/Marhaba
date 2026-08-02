@@ -7,13 +7,7 @@ namespace Taxi.Application.Documents;
 /// </summary>
 public interface IDocumentStorage
 {
-    /// <summary>
-    /// Enregistre un document et retourne sa référence de stockage (clé) ainsi que ses métadonnées.
-    /// </summary>
-    /// <param name="content">Contenu binaire du document.</param>
-    /// <param name="fileName">Nom d'origine du fichier (sert à déterminer l'extension).</param>
-    /// <param name="contentType">Type MIME (ex. <c>image/jpeg</c>, <c>application/pdf</c>).</param>
-    /// <param name="folder">Dossier logique de rangement (ex. <c>drivers/{driverId}</c>), facultatif.</param>
+    /// <summary>Ouvre le contenu via l'API autorisée, sans rendre le conteneur public.</summary>
     Task<DocumentUploadResult> UploadAsync(
         Stream content,
         string fileName,
@@ -21,14 +15,15 @@ public interface IDocumentStorage
         string? folder = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Génère une URL d'accès en lecture, temporaire et signée, vers un document existant identifié par
-    /// sa <paramref name="key"/>. L'admin ouvre ce lien directement ; il expire après <paramref name="expiry"/>.
-    /// </summary>
-    Uri GetReadUrl(string key, TimeSpan expiry);
+    /// <summary>Ouvre le contenu via l'API autorisée, sans rendre le conteneur public.</summary>
+    Task<Stream> OpenReadAsync(string key, CancellationToken cancellationToken = default);
+
+    /// <summary>Supprime définitivement un objet remplacé ou arrivé en fin de rétention.</summary>
+    Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
 /// Résultat d'un dépôt de document : référence de stockage et métadonnées utiles à l'affichage.
 /// </summary>
 public sealed record DocumentUploadResult(string Key, long Size, string ContentType);
+
