@@ -54,6 +54,18 @@ internal sealed class CompletedRideHistoryByDriverSpec : Specification<Ride>
 }
 
 /// <summary>
+/// Sélectionne les courses qu'un écran chauffeur peut éventuellement afficher.
+/// Le filtrage de la vague personnelle est finalisé en mémoire par le handler,
+/// car <c>OfferedDriverIds</c> est une collection primitive persistée.
+/// </summary>
+internal sealed class PendingOrOfferedRidesSpec : Specification<Ride>
+{
+    public PendingOrOfferedRidesSpec()
+        => Query.Where(r => r.Status == RideStatus.Pending || r.Status == RideStatus.Offered)
+            .OrderByDescending(r => r.CreatedAt);
+}
+
+/// <summary>
 /// Spécification : sélectionne toutes les courses en attente de chauffeur (statut <c>Pending</c>), triées de la plus récente à la plus ancienne.
 /// </summary>
 internal sealed class PendingRidesSpec : Specification<Ride>

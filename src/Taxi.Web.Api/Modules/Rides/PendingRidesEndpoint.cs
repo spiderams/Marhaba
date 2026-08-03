@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Taxi.Application.Rides;
 using Taxi.Application.Rides.Pending;
 using Taxi.Domain.Identity;
@@ -13,10 +14,13 @@ public sealed class PendingRidesEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/rides/pending", async (
+        app.MapGet("/api/rides/pending", async (ClaimsPrincipal principal,
             IQueryHandler<GetPendingRidesQuery, IReadOnlyList<RideDto>> handler, CancellationToken ct) =>
         {
-            var result = await handler.Handle(new GetPendingRidesQuery(), ct);
+            var userId = principal.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+            var result = await handler.Handle(new GetPendingRidesQuery(userId), ct);
+
             return result.ToHttpResult();
         })
         .RequireAuthorization(p => p.RequireRole(RoleNames.Driver))

@@ -18,6 +18,7 @@ public sealed record DriverDocumentDto(
     string Type,
     bool Uploaded);
 
+public sealed record AdminDriverDocumentsDto(int DriverId, IReadOnlyList<string> UploadedDocumentTypes);
 /// <summary>
 /// Endpoints sécurisés de gestion des documents KYC Chauffeur.
 ///
@@ -384,6 +385,24 @@ public sealed class DriverDocumentEndpoints : IEndpoint
                 "UploadMyDriverDocument")
             .WithSummary(
                 "Envoie ou remplace un document Chauffeur");
+
+        app.MapGet("/api/admin/drivers/documents", async (
+            IRepository<Driver> drivers, CancellationToken ct) =>
+        {
+            var allDrivers = await drivers.ListAsync(ct);
+            var documents = allDrivers
+                .Select(driver => new AdminDriverDocumentsDto(
+                    driver.Id,
+                    Enum.GetValues<DriverDocumentType>()
+                        .Where(type => driver.GetDocumentKey(type) is not null)
+                        .Select(type => type.ToString())
+                        .ToList()))
+                .ToList();
+
+            return Results.Ok(documents);
+        }).RequireAuthorization(policy => policy.RequireRole(RoleNames.Admin))
+          .WithTags(Tags.Admin)
+          .WithName("GetAdminDriverDocuments");
 
         /*
          * GET /api/admin/drivers/{driverId}/documents/{type}

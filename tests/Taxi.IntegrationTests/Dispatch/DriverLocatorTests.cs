@@ -78,4 +78,26 @@ public sealed class DriverLocatorTests(PostgisContainerFixture fixture) : IClass
         result.Should().ContainSingle();
         result[0].UserId.Should().Be("u-approved");
     }
+    [Fact]
+    public async Task FindNearestAsync_should_find_an_online_driver_near_a_canadian_pickup()
+    {
+        await fixture.ResetDriversAsync();
+        await using var db = fixture.CreateContext();
+
+        const double montrealLatitude = 45.5019;
+        const double montrealLongitude = -73.5674;
+        var approved = Driver.Create("u-canada", "LIC-CA", "CA-0001", "Taxi");
+        approved.Approve();
+        approved.GoOnline(montrealLatitude, montrealLongitude);
+
+        db.Drivers.Add(approved);
+        await db.SaveChangesAsync();
+
+        var locator = new DriverLocator(db);
+        var result = await locator.FindNearestAsync(
+            montrealLatitude, montrealLongitude, radiusMeters: 5000, max: 10, CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].UserId.Should().Be("u-canada");
+    }
 }

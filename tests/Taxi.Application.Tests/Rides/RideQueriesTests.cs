@@ -49,13 +49,38 @@ public class RideQueriesTests
     public async Task GetPendingRides_returns_pending_list()
     {
         var rides = new Mock<IRepository<Ride>>();
+        var drivers = new Mock<IRepository<Driver>>();
+        var driver = Driver.Create("driver-user", "LIC-1", "DJ-1", "Taxi");
+        drivers.Setup(d => d.FirstOrDefaultAsync(It.IsAny<ISpecification<Driver>>(), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(driver);
         rides.Setup(r => r.ListAsync(It.IsAny<ISpecification<Ride>>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new List<Ride> { Pending(), Pending() });
-        var handler = new GetPendingRidesQueryHandler(rides.Object);
+        var handler = new GetPendingRidesQueryHandler(rides.Object, drivers.Object);
 
-        var result = await handler.Handle(new GetPendingRidesQuery(), CancellationToken.None);
+        var result = await handler.Handle(new GetPendingRidesQuery("driver-user"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetPendingRides_returns_offer_addressed_to_current_driver()
+    {
+        var rides = new Mock<IRepository<Ride>>();
+        var drivers = new Mock<IRepository<Driver>>();
+        var driver = Driver.Create("driver-user", "LIC-1", "DJ-1", "Taxi");
+        var offered = Pending();
+        offered.OfferWave([driver.Id], DateTime.UtcNow.AddMinutes(1));
+
+        drivers.Setup(d => d.FirstOrDefaultAsync(It.IsAny<ISpecification<Driver>>(), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(driver);
+        rides.Setup(r => r.ListAsync(It.IsAny<ISpecification<Ride>>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new List<Ride> { offered });
+
+        var handler = new GetPendingRidesQueryHandler(rides.Object, drivers.Object);
+        var result = await handler.Handle(new GetPendingRidesQuery("driver-user"), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle().Which.Status.Should().Be("Offered");
     }
 }
