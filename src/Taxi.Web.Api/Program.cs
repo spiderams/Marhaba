@@ -102,7 +102,8 @@ using (var scope = app.Services.CreateScope())
 
 app.MapDefaultEndpoints();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() ||
+    app.Environment.IsEnvironment("Preview"))
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
