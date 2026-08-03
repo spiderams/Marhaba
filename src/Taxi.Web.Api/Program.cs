@@ -39,28 +39,56 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpoints();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
-if (!string.IsNullOrWhiteSpace(builder.Configuration["DriverDocuments:MalwareScanner:Endpoint"]))
-    builder.Services.AddHttpClient<IDriverDocumentMalwareScanner, HttpDriverDocumentMalwareScanner>();
-else if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
-    builder.Services.AddSingleton<IDriverDocumentMalwareScanner, DevelopmentDocumentMalwareScanner>();
-else
-    throw new InvalidOperationException("DriverDocuments:MalwareScanner:Endpoint doit être configuré hors développement.");
 
-// CORS de développement : autorise l'app mobile Expo (mode web) à appeler l'API
-// et le hub SignalR. AllowCredentials est requis par SignalR et interdit le
-// wildcard "*", d'où la liste explicite des origines de développement.
+builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
+
+if (builder.Environment.IsDevelopment() ||
+    builder.Environment.IsEnvironment("Testing") ||
+    builder.Environment.IsEnvironment("Preview"))
+{
+    builder.Services.AddSingleton<
+        IDriverDocumentMalwareScanner,
+        DevelopmentDocumentMalwareScanner>();
+}
+else
+{
+    var malwareScannerEndpoint =
+        builder.Configuration[
+            "DriverDocuments:MalwareScanner:Endpoint"];
+
+    if (string.IsNullOrWhiteSpace(malwareScannerEndpoint))
+    {
+        throw new InvalidOperationException(
+            "DriverDocuments:MalwareScanner:Endpoint doit être configuré hors développement.");
+    }
+
+    builder.Services.AddHttpClient<
+        IDriverDocumentMalwareScanner,
+        HttpDriverDocumentMalwareScanner>();
+}
+
 const string DevCorsPolicy = "DevCors";
+
 builder.Services.AddCors(options =>
-    options.AddPolicy(DevCorsPolicy, policy => policy
-        .WithOrigins(
-            "http://localhost:8081",  // Expo web (Metro)
-            "http://localhost:19006") // Expo web (ancien port)
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()));
+    options.AddPolicy(
+        DevCorsPolicy,
+        policy => policy
+            .WithOrigins(
+                "http://localhost:8081",
+                "http://localhost:19006")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()));
+
+// IMPORTANT : avant builder.Build()
+var port =
+    Environment.GetEnvironmentVariable("PORT")
+    ?? "5004";
+
+builder.WebHost.UseUrls(
+    $"http://0.0.0.0:{port}");
 
 var app = builder.Build();
-builder.WebHost.UseUrls("http://0.0.0.0:5004");
 
 app.UseExceptionHandler();
 app.UseMiddleware<SecurityHeadersMiddleware>();
