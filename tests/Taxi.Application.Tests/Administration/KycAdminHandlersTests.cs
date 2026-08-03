@@ -23,6 +23,12 @@ public class KycAdminHandlersTests
     }
 
     private static Driver NewPendingDriver() => Driver.Create("u-1", "LIC-001", "DJ-1234", "Taxi");
+    private static void AddRequiredDocuments(Driver driver)
+    {
+        driver.SetDocument(DriverDocumentType.License, "drivers/1/license.pdf");
+        driver.SetDocument(DriverDocumentType.VehicleRegistration, "drivers/1/registration.pdf");
+        driver.SetDocument(DriverDocumentType.Identity, "drivers/1/identity.pdf");
+    }
 
     // --- Approve ---
 
@@ -30,6 +36,7 @@ public class KycAdminHandlersTests
     public async Task Approve_should_approve_a_pending_driver()
     {
         var driver = NewPendingDriver();
+        AddRequiredDocuments(driver);
         var repo = RepoReturning(driver);
         var handler = new ApproveDriverCommandHandler(repo.Object);
 
@@ -38,6 +45,23 @@ public class KycAdminHandlersTests
         result.IsSuccess.Should().BeTrue();
         driver.Status.Should().Be(DriverStatus.Approved);
         repo.Verify(r => r.UpdateAsync(driver, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Approve_should_fail_when_a_required_document_is_missing()
+    {
+        var driver = NewPendingDriver();
+        driver.SetDocument(DriverDocumentType.License, "drivers/1/license.pdf");
+        driver.SetDocument(DriverDocumentType.Identity, "drivers/1/identity.pdf");
+        var repo = RepoReturning(driver);
+        var handler = new ApproveDriverCommandHandler(repo.Object);
+
+        var result = await handler.Handle(new ApproveDriverCommand(1), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(DriverErrors.MissingRequiredDocuments);
+        driver.Status.Should().Be(DriverStatus.PendingApproval);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<Driver>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

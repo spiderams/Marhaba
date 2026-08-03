@@ -3,6 +3,7 @@ using Taxi.SharedKernel.Messaging;
 namespace Taxi.Application.Rides.Pending;
 
 /// <summary>
-/// Requête qui retourne toutes les courses en attente de chauffeur, destinée au tableau de bord des chauffeurs.
+/// Requête qui retourne les courses encore disponibles ainsi que les offres
+/// actuellement adressées au chauffeur connecté.
 /// </summary>
-public sealed record GetPendingRidesQuery : IQuery<IReadOnlyList<RideDto>>;
+public sealed record GetPendingRidesQuery(string DriverUserId) : IQuery<IReadOnlyList<RideDto>>;

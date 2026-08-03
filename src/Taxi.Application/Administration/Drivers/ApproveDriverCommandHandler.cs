@@ -15,6 +15,9 @@ internal sealed class ApproveDriverCommandHandler(IRepository<Driver> drivers)
         if (driver is null)
             return Result.Failure<DriverDto>(Error.NotFound("Driver.NotFound", "Profil chauffeur introuvable."));
 
+        if (driver.Status == DriverStatus.PendingApproval &&
+           Enum.GetValues<DriverDocumentType>().Any(type => driver.GetDocumentKey(type) is null))
+            return Result.Failure<DriverDto>(DriverErrors.MissingRequiredDocuments);
         var result = driver.Approve();
         if (result.IsFailure)
             return Result.Failure<DriverDto>(result.Error);

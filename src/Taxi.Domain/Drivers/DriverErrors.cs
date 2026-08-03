@@ -21,4 +21,8 @@ public static class DriverErrors
     public static readonly Error InvalidStatusTransition = Error.Conflict(
         "Driver.InvalidStatusTransition",
         "Transition de statut d'approbation invalide.");
+
+    public static readonly Error MissingRequiredDocuments = Error.Validation(
+       "Driver.MissingRequiredDocuments",
+       "Le permis de conduire, la carte grise et la pièce d'identité sont obligatoires avant l'approbation.");
 }
