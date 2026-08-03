@@ -12,6 +12,7 @@ using Taxi.Application.Realtime;
 using Taxi.Web.Api.Realtime;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Taxi.Web.Api.Modules.Drivers;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,8 +89,17 @@ var port =
 builder.WebHost.UseUrls(
     $"http://0.0.0.0:{port}");
 
-var app = builder.Build();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
 
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+var app = builder.Build();
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
