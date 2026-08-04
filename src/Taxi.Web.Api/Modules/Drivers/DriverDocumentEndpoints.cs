@@ -5,7 +5,7 @@ using Taxi.Application.Drivers;
 using Taxi.Domain.Drivers;
 using Taxi.Domain.Identity;
 using Taxi.Web.Api.Endpoints;
-
+using Microsoft.AspNetCore.DataProtection;
 namespace Taxi.Web.Api.Modules.Drivers;
 
 /// <summary>
