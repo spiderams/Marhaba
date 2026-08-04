@@ -19,6 +19,9 @@ public sealed record DriverDocumentDto(
     bool Uploaded);
 
 public sealed record AdminDriverDocumentsDto(int DriverId, IReadOnlyList<string> UploadedDocumentTypes);
+public sealed record DriverDocumentAccessDto(
+    string Path,
+    DateTime ExpiresAt);
 /// <summary>
 /// Endpoints sécurisés de gestion des documents KYC Chauffeur.
 ///
@@ -541,6 +544,50 @@ public sealed class DriverDocumentEndpoints : IEndpoint
                 "DownloadDriverDocument")
             .WithSummary(
                 "Télécharge un document KYC Chauffeur");
+                  app.MapPost("/api/admin/drivers/{driverId:int}/documents/{type}/access", async (
+      int driverId, string type, ClaimsPrincipal principal, IRepository<Driver> drivers,
+      IDataProtectionProvider dataProtection, CancellationToken ct) =>
+  {
+      if (!Enum.TryParse<DriverDocumentType>(type, true, out var documentType))
+          return Results.BadRequest();
+
+      var driver = await drivers.FirstOrDefaultAsync(new DriverByIdSpec(driverId), ct);
+      if (driver?.GetDocumentKey(documentType) is null)
+          return Results.NotFound();
+
+      var adminUserId = principal.GetUserId();
+      if (string.IsNullOrEmpty(adminUserId)) return Results.Unauthorized();
+      var expiresAt = DateTime.UtcNow.AddMinutes(2);
+      var payload = $"{driverId}|{documentType}|{expiresAt.Ticks}|{adminUserId}";
+      var ticket = DocumentAccessProtector(dataProtection).Protect(payload);
+      var path = $"/api/admin/driver-documents/access?ticket={Uri.EscapeDataString(ticket)}";
+      return Results.Ok(new DriverDocumentAccessDto(path, expiresAt));
+  }).RequireAuthorization(policy => policy.RequireRole(RoleNames.Admin))
+    .WithTags(Tags.Admin).WithName("CreateDriverDocumentAccess");
+
+  // Le navigateur système ne peut pas transmettre le JWT conservé dans SecureStore.
+  // Ce ticket signé, limité à deux minutes et à un seul document, permet une
+  // consultation externe sans rendre le conteneur KYC public.
+  app.MapGet("/api/admin/driver-documents/access", async (
+      string ticket, IRepository<Driver> drivers, IDocumentStorage storage,
+      IDataProtectionProvider dataProtection, ILogger<DriverDocumentEndpoints> logger,
+      CancellationToken ct) =>
+  {
+      if (!TryReadAccessTicket(
+              dataProtection, ticket, out var driverId, out var documentType, out var adminUserId))
+          return Results.Unauthorized();
+
+      var driver = await drivers.FirstOrDefaultAsync(new DriverByIdSpec(driverId), ct);
+      var key = driver?.GetDocumentKey(documentType);
+      if (key is null) return Results.NotFound();
+
+      var stream = await storage.OpenReadAsync(key, ct);
+      logger.LogInformation(
+          "KYC document accessed with temporary ticket: DriverId={DriverId}, Type={DocumentType}, AdminUserId={AdminUserId}",
+          driverId, documentType, adminUserId);
+      return Results.File(stream, ContentTypeFromKey(key), enableRangeProcessing: true);
+  }).AllowAnonymous().WithTags(Tags.Admin).WithName("OpenDriverDocumentWithTicket");
+
     }
 
     /// <summary>
