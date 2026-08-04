@@ -633,4 +633,46 @@ public sealed class DriverDocumentEndpoints : IEndpoint
                         is not null))
             .ToList();
     }
+
+     private static IDataProtector DocumentAccessProtector(IDataProtectionProvider provider) =>
+    provider.CreateProtector("TaxiDjibouti.DriverDocuments.AdminAccess.v1");
+
+ private static bool TryReadAccessTicket(
+     IDataProtectionProvider provider,
+     string ticket,
+     out int driverId,
+     out DriverDocumentType documentType,
+     out string adminUserId)
+ {
+     driverId = 0;
+     documentType = default;
+     adminUserId = string.Empty;
+     try
+     {
+         var parts = DocumentAccessProtector(provider).Unprotect(ticket).Split('|');
+         if (parts.Length != 4
+             || !int.TryParse(parts[0], out driverId)
+             || !Enum.TryParse(parts[1], out documentType)
+             || !long.TryParse(parts[2], out var expiryTicks)
+             || string.IsNullOrWhiteSpace(parts[3]))
+             return false;
+
+         adminUserId = parts[3];
+         var expiresAt = new DateTime(expiryTicks, DateTimeKind.Utc);
+         return expiresAt >= DateTime.UtcNow && expiresAt <= DateTime.UtcNow.AddMinutes(2);
+     }
+     catch
+     {
+         return false;
+     }
+ }
+
+ private static string ContentTypeFromKey(string key) =>
+     Path.GetExtension(key).ToLowerInvariant() switch
+     {
+         ".pdf" => "application/pdf",
+         ".png" => "image/png",
+         ".jpg" or ".jpeg" => "image/jpeg",
+         _ => "application/octet-stream"
+     };
 }
