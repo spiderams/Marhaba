@@ -20,6 +20,7 @@ builder.AddServiceDefaults();
 builder.Services.AddOpenApi(options =>
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 builder.Services.AddProblemDetails();
+builder.Services.AddDataProtection();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.AddNpgsqlDbContext<AppDbContext>(
