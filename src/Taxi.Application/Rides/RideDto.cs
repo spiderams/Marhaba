@@ -14,7 +14,7 @@ public sealed record RideDto(
     double? DestinationLatitude, double? DestinationLongitude,
     decimal EstimatedPrice, decimal? FinalPrice, string? PaymentMethod, string Status,
     string? CancelledBy, string? CancellationReason, string? CancellationNote,
-    DateTime? AcceptedAt, DateTime? CompletedAt, DateTime CreatedAt)
+    DateTime? OfferExpiresAt, DateTime? AcceptedAt, DateTime? CompletedAt, DateTime CreatedAt))
 {
     public static RideDto From(Ride r) => new(
         r.Id, r.ClientId, r.DriverId,
@@ -24,5 +24,5 @@ public sealed record RideDto(
         r.DestinationLatitude, r.DestinationLongitude,
         r.EstimatedPrice, r.FinalPrice, r.PaymentMethod?.ToString(), r.Status.ToString(),
         r.CancelledBy?.ToString(), r.CancellationReason?.ToString(), r.CancellationNote,
-        r.AcceptedAt, r.CompletedAt, r.CreatedAt);
+        r.OfferExpiresAt, r.AcceptedAt, r.CompletedAt, r.CreatedAt);
 }
