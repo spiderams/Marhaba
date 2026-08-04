@@ -23,7 +23,9 @@ internal sealed partial class RideDispatcher(
     ILogger<RideDispatcher> logger)
     : IRideDispatcher
 {
-    private static readonly TimeSpan OfferTtl = TimeSpan.FromSeconds(15);
+    // Laisse le temps au mobile de recevoir SignalR ou de restaurer l'offre par
+   // interrogation REST en cas de réseau mobile instable.
+   private static readonly TimeSpan OfferTtl = TimeSpan.FromSeconds(30);
     private const double RadiusMeters = 5000;
     private const int MaxCandidates = 20;
     private const int WaveSize = 3;
