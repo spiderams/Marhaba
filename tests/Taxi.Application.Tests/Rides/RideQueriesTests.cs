@@ -82,5 +82,6 @@ public class RideQueriesTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().ContainSingle().Which.Status.Should().Be("Offered");
+        result.Value.Single().OfferExpiresAt.Should().NotBeNull();
     }
 }
